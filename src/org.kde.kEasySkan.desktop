@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Exec=kEasySkan -qwindowtitle %c %i
+Icon=scanner
+X-DocPath=kEasySkan/index.html
+Terminal=false
+Name=kEasySkan
+
+GenericName=Image Scanning Application
+
+Comment=Scan and save images
+
+Categories=Qt;KDE;Graphics;Scanning;

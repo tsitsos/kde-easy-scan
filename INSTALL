@@ -1,0 +1,29 @@
+Use the typical procedure for compiling kde apps using cmake:
+
+mkdir build
+cd build
+cmake ..
+make
+sudo make install
+
+WHAT YOU'LL NEED
+
+cmake >= 2.8.12
+with cmake extra modules
+KDE-FRAMEWORK KF5 >= 5.1.0
+QT5 >= 5.2.0
+QT5 support for: (Core, Widgets, PrintSupport)
+KF5 support for: (CoreAddons, I18n, XmlGui, KIO, Sane)
+libpng
+
+You'll need both run-time and devel packages of the above in order to compile and run kEasySkan
+
+Most distributions provide packages for them, so it won't be a problem.
+
+
+OPTIONAL
+
+gimp and ghostcript, if installed, shall provide full functionality to kEasySkan.
+
+Chances are that they are already installed, as most distros include them as standard option. Anyhow, they're both great open source tools and you won't regret using them.
+

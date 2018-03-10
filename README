@@ -1,0 +1,30 @@
+ 
+This project is a skanlite fork designed to bring more functionalities to the user.
+It is in beta stage so it may not work as expected.
+However, it has been tested to compile and run on many recent GNU/Linux distributions running KDE-5 with no problems.
+It may or may not work on other systems or on other desktop managers. You can try it and tell me.
+
+FEATURES:
+
+-Direct print button
+-Export to PDF file
+-Combine multiple scans into a single PDF file
+-Append scan to an existing PDF file
+-Various save modes
+-Use identifiers to uniquely name each set of scans.
+-Edit with gimp
+-Copy to clipboard to easily import to another application
+-View before saving
+-Open with any installed application on your systems
+
+-More to come...
+
+View INSTALL for install instructions.
+
+Any help or suggestions would be greatly appreciated.
+
+2018 (C) George Tsitsos - tsitsos@yahoo.com
+
+
+
+
