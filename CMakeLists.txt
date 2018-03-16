@@ -49,7 +49,7 @@ find_package(PNG REQUIRED)
 
 include_directories(${PNG_INCLUDE_DIRS})
 
-set(kEasySkan_VERSION_STRING "0.1.0")
+set(kEasySkan_VERSION_STRING "0.2.0")
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/src/version.h)
 

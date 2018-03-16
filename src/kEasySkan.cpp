@@ -49,6 +49,8 @@
 #include <QAction>
 #include <QDate>
 #include <QStandardItemModel>
+#include <QInputDialog>
+#include <QPlainTextEdit>
 
 #include <KAboutApplicationDialog>
 #include <KLocalizedString>
@@ -67,7 +69,7 @@
 #include <KMessageBox>
 #include <KRun>
 #include <KOpenWithDialog>
-#include <QInputDialog>
+
 
 #include <errno.h>
 #include <sstream>
@@ -263,14 +265,16 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
       QAction *MoreActionsAction2 = new QAction(i18n("Edit image with gimp"), this);
       QAction *MoreActionsAction3 = new QAction(i18n("Copy image to Clipboard"),this);
       QAction *MoreActionsAction4 = new QAction(i18n("Settings"),this);
-      QAction *MoreActionsAction5 = new QAction(i18n("Other Application"),this);
+      QAction *MoreActionsAction5 = new QAction(i18n("Mail to"),this);
+      QAction *MoreActionsAction6 = new QAction(i18n("Other Application"),this);
       
       MoreActionsAction1->setIcon(QIcon::fromTheme(QStringLiteral("graphics-viewer-document")));
       MoreActionsAction2->setIcon(QIcon::fromTheme(QStringLiteral("gimp")));
       MoreActionsAction3->setIcon(QIcon::fromTheme(QStringLiteral("document-swap")));
       MoreActionsAction4->setIcon(QIcon::fromTheme(QStringLiteral("settings-configure")));
-      MoreActionsAction5->setIcon(QIcon::fromTheme(QStringLiteral("document-open")));
-      MoreActionsAction5->setShortcuts(KStandardShortcut::open());
+      MoreActionsAction5->setIcon(QIcon::fromTheme(QStringLiteral("mail-message")));
+      MoreActionsAction6->setIcon(QIcon::fromTheme(QStringLiteral("document-open")));
+      MoreActionsAction6->setShortcuts(KStandardShortcut::open());
   
       if (gimpExists==false) {
           MoreActionsAction2->setEnabled(false);
@@ -282,8 +286,9 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
       menuMoreActions->addAction(MoreActionsAction2);
       menuMoreActions->addAction(MoreActionsAction3);
       menuMoreActions->addAction(MoreActionsAction4);
-      menuMoreActions->addSeparator();
       menuMoreActions->addAction(MoreActionsAction5);
+      menuMoreActions->addSeparator();
+      menuMoreActions->addAction(MoreActionsAction6);
       
       //set properties of moreActionsButton
       
@@ -351,7 +356,8 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
       connect(MoreActionsAction2, &QAction::triggered, this, &kEasySkan::OpenWithGimp);
       connect(MoreActionsAction3, &QAction::triggered, this, &kEasySkan::sendToClipboard);
       connect(MoreActionsAction4, &QAction::triggered, this, &kEasySkan::showSettingsDialog);
-      connect(MoreActionsAction5, &QAction::triggered, this, &kEasySkan::OpenWithOther);
+      connect(MoreActionsAction5, &QAction::triggered, this, &kEasySkan::mailTo);
+      connect(MoreActionsAction6, &QAction::triggered, this, &kEasySkan::OpenWithOther);
       connect(PdfAction1, &QAction::triggered, this, &kEasySkan::CreatePdf);
       connect(PdfAction2, &QAction::triggered, this, &kEasySkan::AppendToPdf);
       connect(saveButton, &QPushButton::clicked, this, &kEasySkan::saveDocument);
@@ -415,7 +421,7 @@ void kEasySkan::saveWindowSize()
 
 
 
-void kEasySkan::readSettings(void)
+void kEasySkan::readSettings()
 {
     
     m_settingsDialog->close(); // it doesn't hurt to close if already closed
@@ -514,7 +520,6 @@ void kEasySkan::readSettings(void)
 
     KConfigGroup general(KSharedConfig::openConfig(), "General");
 
-    //m_settingsUi.previewDPI->setCurrentItem(general.readEntry("PreviewDPI", "100"), true); // FIXME KF5 is the 'true' parameter still needed?
     m_settingsUi.previewDPI->setCurrentText(general.readEntry("PreviewDPI", "100"));
 
     m_settingsUi.setPreviewDPI->setChecked(general.readEntry("SetPreviewDPI", false));
@@ -532,7 +537,7 @@ void kEasySkan::readSettings(void)
 }
 
 
-void kEasySkan::saveSettings(void)
+void kEasySkan::saveSettings()
 {
       // Image saving
     
@@ -580,7 +585,7 @@ void kEasySkan::saveSettings(void)
 }
 
 
-void kEasySkan::showSettingsDialog(void)
+void kEasySkan::showSettingsDialog()
 {
     
     m_settingsDialog->exec();
@@ -752,8 +757,8 @@ void kEasySkan::saveDocument()
         if (m_settingsUi.dateTimeAppend->isChecked()==true) {
         suggestedFileName.append(QStringLiteral("-")+dateTime.toString(QStringLiteral("yyyy.MM.dd-hh.mm.ss")));    
         suggestedFileName.append(QStringLiteral(".pdf"));
-        PdfWriter(suggestedFileName);
-        if (PdfWriterSuccess==true) {
+        pdfWriter(suggestedFileName);
+        if (pdfWriterSuccess==true) {
             KMessageBox::information(0,suggestedFileName+i18n("  successfully saved."));
             return;
             }
@@ -766,8 +771,8 @@ void kEasySkan::saveDocument()
             QString strNm = numberToString(autoNumber(suggestedFileName),4);
             suggestedFileName.append(strNm);
             suggestedFileName.append(QStringLiteral(".pdf"));
-            PdfWriter(suggestedFileName);
-            if (PdfWriterSuccess==true) {
+            pdfWriter(suggestedFileName);
+            if (pdfWriterSuccess==true) {
                 KMessageBox::information(0,suggestedFileName+i18n("  successfully saved."));
                 return;
             }
@@ -781,14 +786,14 @@ void kEasySkan::saveDocument()
             
             if (QFile::exists(suggestedFileName)==true) {
                 if (KMessageBox::warningContinueCancel(0,suggestedFileName+i18n(" already exists.\nOverwrite ?"))==5) {
-                    PdfWriter(suggestedFileName);
+                    pdfWriter(suggestedFileName);
                 }
                 else {
                     return;
                 }
             }
             
-            if (PdfWriterSuccess==true) {
+            if (pdfWriterSuccess==true) {
               fileNumber+=1;
               m_settingsUi.fileNumber->setValue(fileNumber);
               saveSettings();    
@@ -819,7 +824,7 @@ void kEasySkan::saveDocument()
 
 
 
-void kEasySkan::getImgDir(void)
+void kEasySkan::getImgDir()
 {
    
     QString dir = QFileDialog::getExistingDirectory(m_settingsDialog, QString(), QDir::homePath());
@@ -848,7 +853,7 @@ void kEasySkan::getImgDir(void)
 }
 
 
-void kEasySkan::getPdfDir(void)
+void kEasySkan::getPdfDir()
 {
     QString dir = QFileDialog::getExistingDirectory(m_settingsDialog, QString(), QDir::homePath());
     QFileInfo myDir(dir);
@@ -880,7 +885,7 @@ void kEasySkan::getPdfDir(void)
 
 
 
-void kEasySkan::showAboutDialog(void)
+void kEasySkan::showAboutDialog()
 {
     KAboutApplicationDialog(*m_aboutData).exec();
 }
@@ -1035,9 +1040,9 @@ void kEasySkan::CreatePdf()
         return;
     }
     
-    PdfWriter(targetFileName);
+    pdfWriter(targetFileName);
     
-    if (PdfWriterSuccess==false) {
+    if (pdfWriterSuccess==false) {
             return;
        }
 
@@ -1098,9 +1103,9 @@ void kEasySkan::AppendToPdf()
           return;
     }
 
-       PdfWriter(tmpDir+QStringLiteral("/.kEasySkan.pdf")); //writes tmp pdf
+       pdfWriter(tmpDir+QStringLiteral("/.kEasySkan.pdf")); //writes tmp pdf
 
-       if (PdfWriterSuccess==false) {
+       if (pdfWriterSuccess==false) {
       
             return;
        }
@@ -1155,9 +1160,9 @@ void kEasySkan::SaveToSinglePdf()
            firstPageCreated=false;
            return;
        }
-       PdfWriter(SinglePdfFileName); //writes the fisrt page 
+       pdfWriter(SinglePdfFileName); //writes the fisrt page 
        
-       if (PdfWriterSuccess==true) {
+       if (pdfWriterSuccess==true) {
             KMessageBox::information (0,SinglePdfFileName+i18n("  has been successfully created. Each new scan will be appended to it.")); 
             firstPageCreated=true;
             return;
@@ -1168,9 +1173,9 @@ void kEasySkan::SaveToSinglePdf()
        }
     }
 
-    PdfWriter(tmpDir+QStringLiteral("/.kEasySkan.pdf")); //writes the next page into temp file
+    pdfWriter(tmpDir+QStringLiteral("/.kEasySkan.pdf")); //writes the next page into temp file
 
-        if (PdfWriterSuccess==false) {
+        if (pdfWriterSuccess==false) {
       
             return;
        }
@@ -1298,6 +1303,160 @@ void kEasySkan::sendToClipboard()
 }
 
 
+void kEasySkan::mailTo()
+{
+   
+    QUrl mailUrl;
+    QString mailStr;
+    QString mmailAddress;
+    QString mmailBody;
+    QString mmailClient;
+    QString mmailFname;
+    QString mmailSubject;
+    
+    QDialog *mailDialog = new QDialog(m_showImgDialog);
+    mailDialog->resize(400, 300);
+    mailDialog->setWindowTitle(QStringLiteral("mail to ..."));
+    
+    QGridLayout *mailLayout = new QGridLayout(mailDialog);
+  
+        QLabel *label = new QLabel(mailDialog);
+        label->setText(i18n("Recipient:", 0));
+        mailLayout->addWidget(label);
+        QLineEdit *mailAddress = new QLineEdit(mailDialog);
+        mailLayout->addWidget(mailAddress);
+
+    
+        QLabel *label_2 = new QLabel(mailDialog);
+        label_2->setText(i18n("Subject:", 0));
+        mailLayout->addWidget(label_2);
+        QLineEdit *mailSubject = new QLineEdit(mailDialog);
+        mailLayout->addWidget(mailSubject);
+        
+        QLabel *label_3 = new QLabel(mailDialog);
+        label_3->setText(i18n("Message Text:", 0));
+        mailLayout->addWidget(label_3);
+        QPlainTextEdit *mailBody = new QPlainTextEdit(mailDialog);
+        mailLayout->addWidget(mailBody);
+        
+        
+        QLabel *label_4 = new QLabel(mailDialog);
+        label_4->setText(i18n("File description:", 0));
+        mailLayout->addWidget(label_4);
+        QLineEdit *mailFname = new QLineEdit(mailDialog);
+        mailLayout->addWidget(mailFname);
+
+        QLabel *label_5 = new QLabel(mailDialog);
+        label_5->setText(i18n("E-Mail Client:", 0));
+        mailLayout->addWidget(label_5);
+        QComboBox *mailClient = new QComboBox(mailDialog);
+        mailClient->addItem(QStringLiteral("kmail"));
+        mailClient->addItem(QStringLiteral("thunderbird"));
+        mailClient->addItem(QStringLiteral("evolution"));
+        mailClient->addItem(QStringLiteral("seamonkey"));
+        mailLayout->addWidget(mailClient);
+        
+        QCheckBox *mailPdf = new QCheckBox(mailDialog);
+        mailPdf->setText(i18n("Send as PDF"));
+        mailLayout->addWidget(mailPdf);
+        
+        
+        
+        QDialogButtonBox *buttonBox = new QDialogButtonBox(mailDialog);
+        buttonBox->setOrientation(Qt::Horizontal);
+        buttonBox->setStandardButtons(QDialogButtonBox::Cancel|QDialogButtonBox::Ok);
+        mailLayout->addWidget(buttonBox);
+        
+        
+        
+
+    connect(buttonBox, &QDialogButtonBox::rejected, mailDialog, &QDialog::close);
+    connect(buttonBox, &QDialogButtonBox::accepted, mailDialog, &QDialog::accept);
+    
+        if (mailDialog->exec()) {
+            mmailAddress=mailAddress->text();
+            mmailSubject=mailSubject->text();
+            mmailBody=mailBody->toPlainText();
+            mmailFname=mailFname->text();
+            mmailClient=mailClient->currentText();
+        }
+        else {
+            return;
+        }
+
+        
+    if (mmailFname.isEmpty()) {
+        mmailFname=tmpDir+QStringLiteral("/.kEasySkan.");
+        
+    }
+    else {
+        mmailFname=tmpDir+QStringLiteral("/")+mmailFname+QStringLiteral(".");
+    }
+    
+    if (mailPdf->isChecked()) {
+        mmailFname.append(QStringLiteral("pdf"));
+        pdfWriter(mmailFname);
+        if (pdfWriterSuccess==false) {return;}
+    }
+    else {
+        mmailFname.append(imageFormatAsString);
+        ImageWriter(mmailFname,imageFormat,imageQuality);
+        if (writeOk==false) {return;} 
+    }
+        
+
+    QProcess *mailSend = new QProcess();
+    QString mailFinalCommand;
+    QString mailClientOptions;
+    
+    if (mmailClient==QStringLiteral("kmail")) {
+        
+        mailClientOptions.append(QStringLiteral(" -s \""));
+        mailClientOptions.append(mmailSubject);
+        mailClientOptions.append(QStringLiteral("\" --body \""));
+        mailClientOptions.append(mmailBody);
+        mailClientOptions.append(QStringLiteral("\" --attach \""));
+        mailClientOptions.append(mmailFname);
+        mailClientOptions.append(QStringLiteral("\" "));
+        mailClientOptions.append(mmailAddress);
+        mailFinalCommand=mmailClient+mailClientOptions;
+    }
+    
+    
+    if (mmailClient==QStringLiteral("evolution")) {
+        mailClientOptions.append(QStringLiteral(" mailto:"));
+        mailClientOptions.append(mmailAddress);
+        mailClientOptions.append(QStringLiteral("?subject=\""));
+        mailClientOptions.append(mmailSubject);
+        mailClientOptions.append(QStringLiteral("\"\&body=\""));
+        mailClientOptions.append(mmailBody);
+        mailClientOptions.append(QStringLiteral("\"\&attach=\""));
+        mailClientOptions.append(mmailFname);
+        mailClientOptions.append(QStringLiteral("\"\""));
+        mailFinalCommand=mmailClient+mailClientOptions;
+    }
+    
+     if ( (mmailClient==QStringLiteral("thunderbird")) | (mmailClient==QStringLiteral("seamonkey")) ) {
+        mailClientOptions.append(QStringLiteral(" -compose \"to="));
+        mailClientOptions.append(mmailAddress);
+        mailClientOptions.append(QStringLiteral(",subject=\""));
+        mailClientOptions.append(mmailSubject);
+        mailClientOptions.append(QStringLiteral("\",body=\""));
+        mailClientOptions.append(mmailBody);
+        mailClientOptions.append(QStringLiteral("\",attachment=\""));
+        mailClientOptions.append(mmailFname);
+        mailClientOptions.append(QStringLiteral("\"\""));
+        mailFinalCommand=mmailClient+mailClientOptions;
+    }
+        
+        
+        KMessageBox::information(0,mailFinalCommand);
+
+    
+    mailSend->start(mailFinalCommand);
+        
+    
+}
 
 
 void kEasySkan::ImageWriter(const QString fName, const QByteArray fFormat, int fQuality)
@@ -1323,14 +1482,18 @@ Possible reasons for this are:\nInvalid filename.\nUnsupported format\nFull disk
 
 
 
-void kEasySkan::PdfWriter(const QString fName)
+void kEasySkan::pdfWriter(const QString fName)
 {
+    QFileInfo fInfo(fName);
+    QString path=fInfo.absolutePath();
+    QString bName=fInfo.completeBaseName();
     
-    PdfWriterSuccess=false;
+    pdfWriterSuccess=false;
     if (QFile::exists(fName)) {QFile::remove(fName);}
     QPrinter *printToPdf = new QPrinter(QPrinter::HighResolution);
     printToPdf->setOutputFormat(QPrinter::PdfFormat);
     printToPdf->setOutputFileName(fName);
+    printToPdf->setDocName(bName+QStringLiteral(" created by kEasySkan!"));
     QPainter painter(printToPdf);
     QRect rect = painter.viewport();
     QSize size = mImage.size();
@@ -1339,11 +1502,10 @@ void kEasySkan::PdfWriter(const QString fName)
     painter.setWindow(mImage.rect());
     painter.drawImage(0, 0, mImage);
     if (QFile::exists(fName)) {
-         PdfWriterSuccess=true ;
+         pdfWriterSuccess=true ;
     }
     else {
-        QFileInfo fInfo(fName);
-        QString path=fInfo.absolutePath();
+        
         QString strError;
         if (QFile::exists(path)==false) {strError=QString(path+i18n(" : Directory not found or invalid file name"));}
         if (fInfo.isWritable()==false && QFile::exists(path)==true) {strError=QString(path+i18n(" : Directory not writable"));}
@@ -1363,8 +1525,8 @@ void kEasySkan::PdfWriter(const QString fName)
 bool   kEasySkan::gsMerge(const QString fName)
 { 
        gsMergeOk=false;
-       QString Command=QString();
-       QString CommandOptions=QString();
+       QString Command;
+       QString CommandOptions;
        QString fNameBackup = fName + (QStringLiteral(".backup"))  ;
        
        if (QFile::exists(fNameBackup)) {QFile::remove(fNameBackup);}

@@ -66,38 +66,42 @@ private:
 
 
 private Q_SLOTS:
-    void showSettingsDialog();
+
+
+
+
+
+    
+    QString numberToString (int i, int length);
+    bool gsMerge(const QString fName);
+    int autoNumber (const QString fName);
+    
+    
+    void AppendToPdf();
+    void CreatePdf();
+    void ImageWriter(const QString fName,const QByteArray fFormat, int fQuality);
+    void OpenWithDefault();
+    void OpenWithGimp();
+    void OpenWithOther();
+    void SaveToSinglePdf();
+    void alertUser(int type, const QString &strStatus);
+    void availableDevices(const QList<KSaneWidget::DeviceInfo> &deviceList);
+    void buttonPressed(const QString &optionName, const QString &optionLabel, bool pressed);
+    void defaultScannerOptions();
     void getImgDir();
     void getPdfDir();
     void imageReady(QByteArray &, int, int, int, int);
-    void saveDocument();
-    void showAboutDialog();
-    void saveWindowSize();
-
-    void saveScannerOptions();
-    void defaultScannerOptions();
-
-    void availableDevices(const QList<KSaneWidget::DeviceInfo> &deviceList);
-
-    void alertUser(int type, const QString &strStatus);
-    void buttonPressed(const QString &optionName, const QString &optionLabel, bool pressed);
-
-    void showHelp();
-
-    
-    void sendToClipboard();
+    void mailTo();
+    void pdfWriter(const QString fName);
     void printImage();
-    void OpenWithGimp();
-    void OpenWithDefault();
-    void OpenWithOther();
-    void ImageWriter(const QString fName,const QByteArray fFormat, int fQuality);
-    void AppendToPdf();
-    void PdfWriter(const QString fName);
-    void CreatePdf();
-    QString numberToString (int i, int length);
-    int autoNumber (const QString fName);
-    void SaveToSinglePdf();
-    bool gsMerge(const QString fName);
+    void saveDocument();
+    void saveScannerOptions();
+    void saveWindowSize();
+    void sendToClipboard();
+    void showAboutDialog();
+    void showHelp();
+    void showSettingsDialog();
+    
     
     
 protected:
@@ -124,30 +128,30 @@ private:
     
     
 
-    QPrinter         *printer ;
-    QImage            mImage;
-    bool              writeOk;
-    bool              PdfWriterSuccess;
-    QString           tmpDir;
     QByteArray        imageFormat;
-    QString           imageFormatAsString;
-    int               imageQuality;
-    int               fileNumber;
+    QImage            mImage;
+    QPrinter         *printer ;
+    QString           PdfExistingFileName;
+    QString           SinglePdfFileName ;
     QString           fileNumberAsString;
+    QString           imageFormatAsString;
+    QString           imageNamePrefix;
     QString           imgDir;
     QString           pdfDir;
     QString           pdfNamePrefix;
-    QString           imageNamePrefix;
-    bool              gimpExists;
-    bool              gsExists;
-    bool              useIdentifier=true;
+    QString           tmpDir;
     bool              dirNotFound=false;
     bool              firstPage=true;
     bool              firstPageCreated=false;
-    QString           SinglePdfFileName ;
-    QString           PdfExistingFileName;
+    bool              gimpExists;
+    bool              gsExists;
     bool              gsMergeOk;
     bool              isExisting=false;
+    bool              pdfWriterSuccess;
+    bool              useIdentifier=true;
+    bool              writeOk;
+    int               fileNumber;
+    int               imageQuality;
 };
 
 #endif

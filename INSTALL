@@ -3,7 +3,7 @@ Use the typical procedure for compiling kde apps using cmake:
 mkdir build
 cd build
 cmake ..
-make
+make (ignore warnings about unknown escape sequence, if any)
 sudo make install
 
 WHAT YOU'LL NEED
