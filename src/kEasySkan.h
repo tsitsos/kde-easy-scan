@@ -26,6 +26,9 @@
 
 #include <QDir>
 #include <QDialog>
+#include <QUrl>
+#include <QStandardPaths>
+#include <QIcon>
 
 #include <KSaneWidget>
 
@@ -152,6 +155,27 @@ private:
     bool              writeOk;
     int               fileNumber;
     int               imageQuality;
+
+QString  pathToExecFile = QStandardPaths::findExecutable(QStringLiteral("kEasySkan"));
+QUrl iconDir = QUrl::fromLocalFile(pathToExecFile);
+
+QString iconPath = (iconDir.resolved(QUrl((QStringLiteral("../share/kEasySkan/icons/"))))).path();
+    
+QIcon    settingsIcon = QIcon::fromTheme(QStringLiteral("configure"),QIcon( iconPath+QStringLiteral("/settings.svg")));
+QIcon    saveIcon = QIcon::fromTheme(QStringLiteral("document-save"),QIcon( iconPath+QStringLiteral("/save.svg")));
+QIcon    okApplyIcon = QIcon::fromTheme(QStringLiteral("dialog-ok"),QIcon( iconPath+QStringLiteral("/okApply.svg"))); 
+QIcon    cancelIcon = QIcon::fromTheme(QStringLiteral("dialog-cancel"),QIcon( iconPath+QStringLiteral("/cancel.svg")));
+QIcon    printIcon =QIcon::fromTheme(QStringLiteral("document-print"),QIcon( iconPath+QStringLiteral("/print.svg")));
+QIcon    defaultViewerIcon =QIcon::fromTheme(QStringLiteral("graphics-viewer-document"),QIcon( iconPath+QStringLiteral("/defaultviewer.svg"))); 
+QIcon    gimpIcon =QIcon( iconPath+QStringLiteral("/gimp.svg")); 
+QIcon    clipboardIcon =QIcon::fromTheme(QStringLiteral("document-swap"),QIcon( iconPath+QStringLiteral("/clipboard.svg"))); 
+QIcon    mailIcon =QIcon::fromTheme(QStringLiteral("mail-message"),QIcon( iconPath+QStringLiteral("/mail.svg"))); 
+QIcon    openWithIcon =QIcon::fromTheme(QStringLiteral("document-open"),QIcon( iconPath+QStringLiteral("/openwith.svg"))); 
+QIcon    pdfCreateIcon =QIcon( iconPath+QStringLiteral("/pdfcreate.svg")); 
+QIcon    pdfAppendIcon =QIcon( iconPath+QStringLiteral("/pdfappend.svg")); 
+QIcon    pdfButtonIcon  =QIcon( iconPath+QStringLiteral("/pdfbutton.svg")); 
+QIcon    editUndoIcon  =QIcon::fromTheme(QStringLiteral("edit-undo"),QIcon( iconPath+QStringLiteral("/edit-undo.svg")));
+QIcon    otherActionsIcon  =QIcon::fromTheme(QStringLiteral("document-export"),QIcon( iconPath+QStringLiteral("/otheractionsbutton.svg")));
 };
 
 #endif

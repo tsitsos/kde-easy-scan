@@ -80,7 +80,9 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
     : QDialog(parent)
     , m_aboutData(nullptr)
     
+
 {
+ 
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
 
     QDialogButtonBox *dlgButtonBoxBottom = new QDialogButtonBox(this);
@@ -89,7 +91,7 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
     QPushButton *btnAbout = dlgButtonBoxBottom->addButton(i18n("About"), QDialogButtonBox::ButtonRole::ActionRole);
     // was "User1":
     QPushButton *btnSettings = dlgButtonBoxBottom->addButton(i18n("Settings"), QDialogButtonBox::ButtonRole::ActionRole);
-    btnSettings->setIcon(QIcon::fromTheme(QStringLiteral("configure")));
+    btnSettings->setIcon(settingsIcon);
 
     m_ksanew = new KSaneIface::KSaneWidget(this);
     connect(m_ksanew, &KSaneWidget::imageReady, this, &kEasySkan::imageReady);
@@ -126,17 +128,17 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
 
         QWidget *settingsWidget = new QWidget(m_settingsDialog);
         m_settingsUi.setupUi(settingsWidget);
-        m_settingsUi.revertOptions->setIcon(QIcon::fromTheme(QStringLiteral("edit-undo")));
+        m_settingsUi.revertOptions->setIcon(editUndoIcon);
 
         mainLayout->addWidget(settingsWidget);
 
         QDialogButtonBox *dlgButtonBoxBottom = new QDialogButtonBox(this);
         QPushButton *doneButton = dlgButtonBoxBottom->addButton(i18n("Done"), QDialogButtonBox::ButtonRole::ActionRole);
         doneButton->setToolTip(i18n("Apply and save changes"));
-        doneButton->setIcon(QIcon::fromTheme(QStringLiteral("dialog-ok")));
+        doneButton->setIcon(okApplyIcon);
         QPushButton *discardButton = dlgButtonBoxBottom->addButton(i18n("Discard"), QDialogButtonBox::ButtonRole::ActionRole);
         discardButton->setToolTip(i18n("Discard changes"));
-        discardButton->setIcon(QIcon::fromTheme(QStringLiteral("dialog-cancel")));
+        discardButton->setIcon(cancelIcon);
         
         connect(doneButton, &QPushButton::clicked, this ,&kEasySkan::saveSettings );
         connect(discardButton, &QPushButton::clicked, this ,&kEasySkan::readSettings );
@@ -233,11 +235,11 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
       //set button properties
        
       printButton->setToolTip(i18n("Send current image to printer or save to local pdf file."));
-      printButton->setIcon(QIcon::fromTheme(QStringLiteral("document-print")));
+      printButton->setIcon(printIcon);
       saveButton->setToolTip(i18n("Save image to disk."));
-      saveButton->setIcon(QIcon::fromTheme(QStringLiteral("document-save")));
+      saveButton->setIcon(saveIcon);
       discardButton->setToolTip(i18n("Discard window"));
-      discardButton->setIcon(QIcon::fromTheme(QStringLiteral("dialog-cancel")));
+      discardButton->setIcon(cancelIcon);
        
       //define moreactions menu and its actions
       
@@ -249,12 +251,13 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
       QAction *MoreActionsAction5 = new QAction(i18n("Mail to"),this);
       QAction *MoreActionsAction6 = new QAction(i18n("Other Application"),this);
       
-      MoreActionsAction1->setIcon(QIcon::fromTheme(QStringLiteral("graphics-viewer-document")));
-      MoreActionsAction2->setIcon(QIcon::fromTheme(QStringLiteral("gimp")));
-      MoreActionsAction3->setIcon(QIcon::fromTheme(QStringLiteral("document-swap")));
-      MoreActionsAction4->setIcon(QIcon::fromTheme(QStringLiteral("settings-configure")));
-      MoreActionsAction5->setIcon(QIcon::fromTheme(QStringLiteral("mail-message")));
-      MoreActionsAction6->setIcon(QIcon::fromTheme(QStringLiteral("document-open")));
+      QString gIcon = QStringLiteral("/usr/share/icons/breeze-dark/apps/48/gimp.svg");
+      MoreActionsAction1->setIcon(defaultViewerIcon);
+      MoreActionsAction2->setIcon(gimpIcon);
+      MoreActionsAction3->setIcon(clipboardIcon);
+      MoreActionsAction4->setIcon(settingsIcon);
+      MoreActionsAction5->setIcon(mailIcon);
+      MoreActionsAction6->setIcon(openWithIcon);
       MoreActionsAction6->setShortcuts(KStandardShortcut::open());
   
       if (gimpExists==false) {
@@ -276,7 +279,7 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
       moreActionsButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
       moreActionsButton->setPopupMode(QToolButton::MenuButtonPopup);
       moreActionsButton->setToolTip(i18n("More Actions"));
-      moreActionsButton->setIcon(QIcon::fromTheme(QStringLiteral("document-export")));
+      moreActionsButton->setIcon(otherActionsIcon);
       moreActionsButton->setText(i18n("More Actions"));
       
       //  add menuMoreActions to moreActionsButton
@@ -289,8 +292,8 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
       QAction *PdfAction1 = new QAction(i18n("Create PDF"), this);
       QAction *PdfAction2 = new QAction(i18n("Append to PDF"), this);
       
-      PdfAction1->setIcon(QIcon::fromTheme(QStringLiteral("viewpdf")));
-      PdfAction2->setIcon(QIcon::fromTheme(QStringLiteral("pdf-annotations")));
+      PdfAction1->setIcon(pdfCreateIcon);
+      PdfAction2->setIcon(pdfAppendIcon);
       
        if (gsExists==false) {
           
@@ -306,7 +309,7 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
       pdfButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
       pdfButton->setPopupMode(QToolButton::MenuButtonPopup);
       pdfButton->setToolTip(i18n("Create a new PDF file or append several documents into one PDF file"));
-      pdfButton->setIcon(QIcon::fromTheme(QStringLiteral("application-pdf")));
+      pdfButton->setIcon(pdfButtonIcon);
       pdfButton->setText(i18n("PDF Actions"));
         
       //  add menuPdf to pdfButton
@@ -361,8 +364,8 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
 
 void kEasySkan::showHelp()
 {
-    QString  execFile = QStandardPaths::findExecutable(QStringLiteral("kEasySkan"));
-    QUrl helpFile = QUrl::fromLocalFile(execFile);
+//     QString  pathToExecFile = QStandardPaths::findExecutable(QStringLiteral("kEasySkan"));
+    QUrl helpFile = QUrl::fromLocalFile(pathToExecFile);
     QUrl relative(QStringLiteral("../share/kEasySkan/help/index.html"));
     QDesktopServices::openUrl(helpFile.resolved(relative));
     
@@ -1279,7 +1282,7 @@ void kEasySkan::mailTo()
         mailLayout->addWidget(mailFname);
 
         QLabel *label_5 = new QLabel(mailDialog);
-        label_5->setText(i18n("E-Mail Client:", 0));
+        label_5->setText(i18n("E-Mail Client:"));
         mailLayout->addWidget(label_5);
         QComboBox *mailClient = new QComboBox(mailDialog);
         mailClient->addItem(QStringLiteral("kmail"));
