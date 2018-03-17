@@ -91,7 +91,6 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
     QPushButton *btnSettings = dlgButtonBoxBottom->addButton(i18n("Settings"), QDialogButtonBox::ButtonRole::ActionRole);
     btnSettings->setIcon(QIcon::fromTheme(QStringLiteral("configure")));
 
-
     m_ksanew = new KSaneIface::KSaneWidget(this);
     connect(m_ksanew, &KSaneWidget::imageReady, this, &kEasySkan::imageReady);
     connect(m_ksanew, &KSaneWidget::availableDevices, this, &kEasySkan::availableDevices);
@@ -117,8 +116,6 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
 
     
     
-    
-    
     //
     // Create the settings dialog
     //
@@ -131,8 +128,6 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
         m_settingsUi.setupUi(settingsWidget);
         m_settingsUi.revertOptions->setIcon(QIcon::fromTheme(QStringLiteral("edit-undo")));
 
- 
-
         mainLayout->addWidget(settingsWidget);
 
         QDialogButtonBox *dlgButtonBoxBottom = new QDialogButtonBox(this);
@@ -143,30 +138,21 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
         discardButton->setToolTip(i18n("Discard changes"));
         discardButton->setIcon(QIcon::fromTheme(QStringLiteral("dialog-cancel")));
         
-
-        
         connect(doneButton, &QPushButton::clicked, this ,&kEasySkan::saveSettings );
         connect(discardButton, &QPushButton::clicked, this ,&kEasySkan::readSettings );
          
-        
-
         mainLayout->addWidget(dlgButtonBoxBottom);
 
         m_settingsDialog->setWindowTitle(i18n("kEasySkan Settings"));
         
-        
-
         connect(m_settingsUi.getImgDirButton, &QPushButton::clicked, this, &kEasySkan::getImgDir);
         connect(m_settingsUi.getPdfDirButton, &QPushButton::clicked, this, &kEasySkan::getPdfDir);
         connect(m_settingsUi.revertOptions,&QPushButton::clicked, this, &kEasySkan::defaultScannerOptions);
         
         readSettings();
 
-   
-        
     }
 
-    
    
    // open the scan device
     if (m_ksanew->openDevice(device) == false) {
@@ -225,19 +211,15 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
     }
     
     
-    
     // prepare the Show Image Dialog
     {
       
-     
       m_showImgDialog = new QDialog(this);
 
-      
       QVBoxLayout *mainLayout = new QVBoxLayout(m_showImgDialog);
 
       QDialogButtonBox *showImgButtonBox = new QDialogButtonBox(m_showImgDialog);
       
-        
       // define and add the buttons to buttonbox 
       
       QToolButton *moreActionsButton = new QToolButton (m_showImgDialog); 
@@ -247,7 +229,6 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
       showImgButtonBox->addButton(pdfButton, QDialogButtonBox::ActionRole);
       showImgButtonBox->addButton(moreActionsButton, QDialogButtonBox::ActionRole);
       QPushButton *discardButton = showImgButtonBox->addButton(i18n("Discard"), QDialogButtonBox::ButtonRole::ActionRole);
-         
      
       //set button properties
        
@@ -299,12 +280,8 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
       moreActionsButton->setText(i18n("More Actions"));
       
       //  add menuMoreActions to moreActionsButton
-      
 
       moreActionsButton->setMenu(menuMoreActions);
-
-      
-      
       
       //define pdfactions menu and its actions
       
@@ -371,14 +348,6 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
 
     
     
-    
-    
-    
-   
-    
-    
-    
-    
     // save the default sane options for later use
     m_ksanew->getOptVals(m_defaultScanOpts);
 
@@ -420,7 +389,6 @@ void kEasySkan::saveWindowSize()
 
 
 
-
 void kEasySkan::readSettings()
 {
     
@@ -439,7 +407,6 @@ void kEasySkan::readSettings()
     m_settingsUi.saveMode->setCurrentIndex(imgSaving.readEntry("Save Mode", (int)standardMode));
     m_settingsUi.fileNumber->setValue(imgSaving.readEntry("File Number",1));
  
-    
     // IMAGE
     
     m_settingsUi.saveImgDir->setText(imgSaving.readEntry("Image Save Location", QDir::homePath()));
@@ -447,17 +414,14 @@ void kEasySkan::readSettings()
     m_settingsUi.imgFormat->setText(imgSaving.readEntry("Image Format","JPG"));
     m_settingsUi.imgQuality->setValue(imgSaving.readEntry("Image Quality",90));
     
-
     //PDF
     
     m_settingsUi.savePdfDir->setText(imgSaving.readEntry("PDF Save Location", QDir::homePath()));
     m_settingsUi.pdfPrefix->setText(imgSaving.readEntry("PDF Name Prefix", i18n("My PDF")));
-     
     
     //Temp Files Location
     
     m_settingsUi.tmpDir->setText(imgSaving.readEntry("Temp Files Location",QDir::tempPath()));
-    
     
     // define varialbles to be used from now on just for simplicity
     
@@ -543,14 +507,9 @@ void kEasySkan::saveSettings()
     
         m_settingsDialog->close(); // it doesn't hurt to close if already closed
     
-        
-        
-        
         KConfigGroup imgSaving(KSharedConfig::openConfig(), "Image Saving");
         
         // 
-        
-        
         imgSaving.writeEntry("Save Mode", m_settingsUi.saveMode->currentIndex());
         imgSaving.writeEntry("Image Save Location", m_settingsUi.saveImgDir->text());
         imgSaving.writeEntry("Image Name Prefix", m_settingsUi.imgPrefix->text());
@@ -578,9 +537,7 @@ void kEasySkan::saveSettings()
 
         general.sync();
         
-        
         readSettings(); // make changes, if any, effective at once.
-  
         
 }
 
@@ -593,8 +550,6 @@ void kEasySkan::showSettingsDialog()
 
 }    
    
-
-
 
 
 void kEasySkan::imageReady(QByteArray &data, int w, int h, int bpl, int f)
@@ -690,7 +645,6 @@ void kEasySkan::saveDocument()
         }
          
     
-    
 // fast save to image    
     if (m_settingsUi.saveMode->currentIndex()==fastImg) {
         suggestedFileName=imgDir+QStringLiteral("/")+imageNamePrefix;
@@ -746,7 +700,6 @@ void kEasySkan::saveDocument()
         
     }
     
- 
  
 // fast save to pdf
     
@@ -818,9 +771,6 @@ void kEasySkan::saveDocument()
    
 }
     
-
- 
-
 
 
 
@@ -960,16 +910,6 @@ void kEasySkan::buttonPressed(const QString &optionName, const QString &optionLa
 
 
 
-
-
-
-
-
-
-
-
-
-
 void kEasySkan::printImage()
 {
     
@@ -980,7 +920,6 @@ void kEasySkan::printImage()
     msgBox2->setStandardButtons(QMessageBox::Ok);
     msgBox2->open();
     QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents,1000); //(workaround) : allow some time for the msgbox to render 
-
    
     QPrinter *printer = new QPrinter(QPrinter::HighResolution);
     
@@ -1000,7 +939,6 @@ void kEasySkan::printImage()
         painter.end();
     
     }
-    
     
 }
 
@@ -1271,7 +1209,6 @@ void kEasySkan::OpenWithDefault()
 {
         ImageWriter(tmpDir+QStringLiteral("/.kEasySkan.")+imageFormatAsString,imageFormat,imageQuality);
         if (writeOk==false) {return;} 
-        
     
     QDesktopServices::openUrl(QUrl::fromLocalFile(tmpDir+QStringLiteral("/.kEasySkan.")+imageFormatAsString));
 }
@@ -1280,7 +1217,6 @@ void kEasySkan::OpenWithDefault()
 
 void kEasySkan::OpenWithOther()
 {
-    
     ImageWriter(tmpDir+QStringLiteral("/.kEasySkan.")+imageFormatAsString,imageFormat,imageQuality);
 
     if (writeOk==false) {return;} 
@@ -1296,7 +1232,6 @@ void kEasySkan::OpenWithOther()
 
 void kEasySkan::sendToClipboard()
 {
- 
     QApplication::clipboard() -> setImage(mImage, QClipboard::Clipboard);
      
     KMessageBox::information(0,i18n("Image copied to clipboard ! \nIt will remain available until you exit the main program"));
@@ -1305,7 +1240,6 @@ void kEasySkan::sendToClipboard()
 
 void kEasySkan::mailTo()
 {
-   
     QUrl mailUrl;
     QString mailStr;
     QString mmailAddress;
@@ -1321,27 +1255,25 @@ void kEasySkan::mailTo()
     QGridLayout *mailLayout = new QGridLayout(mailDialog);
   
         QLabel *label = new QLabel(mailDialog);
-        label->setText(i18n("Recipient:", 0));
+        label->setText(i18n("Recipient:"));
         mailLayout->addWidget(label);
         QLineEdit *mailAddress = new QLineEdit(mailDialog);
         mailLayout->addWidget(mailAddress);
 
-    
         QLabel *label_2 = new QLabel(mailDialog);
-        label_2->setText(i18n("Subject:", 0));
+        label_2->setText(i18n("Subject:"));
         mailLayout->addWidget(label_2);
         QLineEdit *mailSubject = new QLineEdit(mailDialog);
         mailLayout->addWidget(mailSubject);
         
         QLabel *label_3 = new QLabel(mailDialog);
-        label_3->setText(i18n("Message Text:", 0));
+        label_3->setText(i18n("Message Text:"));
         mailLayout->addWidget(label_3);
         QPlainTextEdit *mailBody = new QPlainTextEdit(mailDialog);
         mailLayout->addWidget(mailBody);
         
-        
         QLabel *label_4 = new QLabel(mailDialog);
-        label_4->setText(i18n("File description:", 0));
+        label_4->setText(i18n("File description:"));
         mailLayout->addWidget(label_4);
         QLineEdit *mailFname = new QLineEdit(mailDialog);
         mailLayout->addWidget(mailFname);
@@ -1360,16 +1292,11 @@ void kEasySkan::mailTo()
         mailPdf->setText(i18n("Send as PDF"));
         mailLayout->addWidget(mailPdf);
         
-        
-        
         QDialogButtonBox *buttonBox = new QDialogButtonBox(mailDialog);
         buttonBox->setOrientation(Qt::Horizontal);
         buttonBox->setStandardButtons(QDialogButtonBox::Cancel|QDialogButtonBox::Ok);
         mailLayout->addWidget(buttonBox);
         
-        
-        
-
     connect(buttonBox, &QDialogButtonBox::rejected, mailDialog, &QDialog::close);
     connect(buttonBox, &QDialogButtonBox::accepted, mailDialog, &QDialog::accept);
     
@@ -1384,6 +1311,10 @@ void kEasySkan::mailTo()
             return;
         }
 
+    if  ( (QStandardPaths::findExecutable(mmailClient)).isEmpty() ) {
+        KMessageBox::error(mailDialog,mmailClient+i18n(" not found!"));
+        return;
+    }
         
     if (mmailFname.isEmpty()) {
         mmailFname=tmpDir+QStringLiteral("/.kEasySkan.");
@@ -1404,7 +1335,6 @@ void kEasySkan::mailTo()
         if (writeOk==false) {return;} 
     }
         
-
     QProcess *mailSend = new QProcess();
     QString mailFinalCommand;
     QString mailClientOptions;
@@ -1421,7 +1351,6 @@ void kEasySkan::mailTo()
         mailClientOptions.append(mmailAddress);
         mailFinalCommand=mmailClient+mailClientOptions;
     }
-    
     
     if (mmailClient==QStringLiteral("evolution")) {
         mailClientOptions.append(QStringLiteral(" mailto:"));
@@ -1449,12 +1378,9 @@ void kEasySkan::mailTo()
         mailFinalCommand=mmailClient+mailClientOptions;
     }
         
-        
-        KMessageBox::information(0,mailFinalCommand);
-
+//         KMessageBox::information(0,mailFinalCommand);
     
     mailSend->start(mailFinalCommand);
-        
     
 }
 
@@ -1516,9 +1442,6 @@ void kEasySkan::pdfWriter(const QString fName)
     }    
         
 }
-
-
-
 
 
     
