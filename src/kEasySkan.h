@@ -95,7 +95,7 @@ private Q_SLOTS:
     void getPdfDir();
     void imageReady(QByteArray &, int, int, int, int);
     void mailTo();
-    void pdfWriter(const QString fName);
+    void pdfWriter(const QString fName, bool writeDocName);
     void printImage();
     void saveDocument();
     void saveScannerOptions();

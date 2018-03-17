@@ -713,7 +713,7 @@ void kEasySkan::saveDocument()
         if (m_settingsUi.dateTimeAppend->isChecked()==true) {
         suggestedFileName.append(QStringLiteral("-")+dateTime.toString(QStringLiteral("yyyy.MM.dd-hh.mm.ss")));    
         suggestedFileName.append(QStringLiteral(".pdf"));
-        pdfWriter(suggestedFileName);
+        pdfWriter(suggestedFileName,true);
         if (pdfWriterSuccess==true) {
             KMessageBox::information(0,suggestedFileName+i18n("  successfully saved."));
             return;
@@ -727,7 +727,7 @@ void kEasySkan::saveDocument()
             QString strNm = numberToString(autoNumber(suggestedFileName),4);
             suggestedFileName.append(strNm);
             suggestedFileName.append(QStringLiteral(".pdf"));
-            pdfWriter(suggestedFileName);
+            pdfWriter(suggestedFileName,true);
             if (pdfWriterSuccess==true) {
                 KMessageBox::information(0,suggestedFileName+i18n("  successfully saved."));
                 return;
@@ -742,7 +742,7 @@ void kEasySkan::saveDocument()
             
             if (QFile::exists(suggestedFileName)==true) {
                 if (KMessageBox::warningContinueCancel(0,suggestedFileName+i18n(" already exists.\nOverwrite ?"))==5) {
-                    pdfWriter(suggestedFileName);
+                    pdfWriter(suggestedFileName,true);
                 }
                 else {
                     return;
@@ -981,7 +981,7 @@ void kEasySkan::CreatePdf()
         return;
     }
     
-    pdfWriter(targetFileName);
+    pdfWriter(targetFileName,true);
     
     if (pdfWriterSuccess==false) {
             return;
@@ -1044,7 +1044,7 @@ void kEasySkan::AppendToPdf()
           return;
     }
 
-       pdfWriter(tmpDir+QStringLiteral("/.kEasySkan.pdf")); //writes tmp pdf
+       pdfWriter(tmpDir+QStringLiteral("/.kEasySkan.pdf"),false); //writes tmp pdf
 
        if (pdfWriterSuccess==false) {
       
@@ -1101,7 +1101,13 @@ void kEasySkan::SaveToSinglePdf()
            firstPageCreated=false;
            return;
        }
-       pdfWriter(SinglePdfFileName); //writes the fisrt page 
+       
+       QString last4=SinglePdfFileName.right(4);
+       if ((last4.contains(QStringLiteral(".pdf"),Qt::CaseInsensitive))==false) {
+           SinglePdfFileName.append(QStringLiteral(".pdf"));
+       }
+       
+       pdfWriter(SinglePdfFileName,true); //writes the fisrt page 
        
        if (pdfWriterSuccess==true) {
             KMessageBox::information (0,SinglePdfFileName+i18n("  has been successfully created. Each new scan will be appended to it.")); 
@@ -1114,7 +1120,7 @@ void kEasySkan::SaveToSinglePdf()
        }
     }
 
-    pdfWriter(tmpDir+QStringLiteral("/.kEasySkan.pdf")); //writes the next page into temp file
+    pdfWriter(tmpDir+QStringLiteral("/.kEasySkan.pdf"),false); //writes the next page into temp file
 
         if (pdfWriterSuccess==false) {
       
@@ -1329,7 +1335,7 @@ void kEasySkan::mailTo()
     
     if (mailPdf->isChecked()) {
         mmailFname.append(QStringLiteral("pdf"));
-        pdfWriter(mmailFname);
+        pdfWriter(mmailFname,true);
         if (pdfWriterSuccess==false) {return;}
     }
     else {
@@ -1411,7 +1417,7 @@ Possible reasons for this are:\nInvalid filename.\nUnsupported format\nFull disk
 
 
 
-void kEasySkan::pdfWriter(const QString fName)
+void kEasySkan::pdfWriter(const QString fName, bool writeDocName)
 {
     QFileInfo fInfo(fName);
     QString path=fInfo.absolutePath();
@@ -1421,8 +1427,8 @@ void kEasySkan::pdfWriter(const QString fName)
     if (QFile::exists(fName)) {QFile::remove(fName);}
     QPrinter *printToPdf = new QPrinter(QPrinter::HighResolution);
     printToPdf->setOutputFormat(QPrinter::PdfFormat);
-    printToPdf->setOutputFileName(fName);
-    printToPdf->setDocName(bName+QStringLiteral(" created by kEasySkan!"));
+    printToPdf->setOutputFileName(fName); 
+    if (writeDocName==true) { printToPdf->setDocName(bName+QStringLiteral(" created by kEasySkan!")); }
     QPainter painter(printToPdf);
     QRect rect = painter.viewport();
     QSize size = mImage.size();
