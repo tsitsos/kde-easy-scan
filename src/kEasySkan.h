@@ -128,8 +128,6 @@ private:
     QStringList              m_filterList;
     QStringList              m_filter16BitList;
     QStringList              m_typeList;
-    
-    
 
     QByteArray        imageFormat;
     QImage            mImage;
@@ -157,9 +155,8 @@ private:
     int               imageQuality;
 
 QString  pathToExecFile = QStandardPaths::findExecutable(QStringLiteral("kEasySkan"));
-QUrl iconDir = QUrl::fromLocalFile(pathToExecFile);
-
-QString iconPath = (iconDir.resolved(QUrl((QStringLiteral("../share/kEasySkan/icons/"))))).path();
+QUrl     iconDir = QUrl::fromLocalFile(pathToExecFile);
+QString  iconPath = (iconDir.resolved(QUrl((QStringLiteral("../share/kEasySkan/icons/"))))).path();
     
 QIcon    settingsIcon = QIcon::fromTheme(QStringLiteral("configure"),QIcon( iconPath+QStringLiteral("/settings.svg")));
 QIcon    saveIcon = QIcon::fromTheme(QStringLiteral("document-save"),QIcon( iconPath+QStringLiteral("/save.svg")));
@@ -173,7 +170,8 @@ QIcon    mailIcon =QIcon::fromTheme(QStringLiteral("mail-message"),QIcon( iconPa
 QIcon    openWithIcon =QIcon::fromTheme(QStringLiteral("document-open"),QIcon( iconPath+QStringLiteral("/openwith.svg"))); 
 QIcon    pdfCreateIcon =QIcon( iconPath+QStringLiteral("/pdfcreate.svg")); 
 QIcon    pdfAppendIcon =QIcon( iconPath+QStringLiteral("/pdfappend.svg")); 
-QIcon    pdfButtonIcon  =QIcon( iconPath+QStringLiteral("/pdfbutton.svg")); 
+QIcon    pdfButtonIcon =QIcon( iconPath+QStringLiteral("/pdfbutton.svg")); 
+QIcon    pdfEditColorsIcon =QIcon( iconPath+QStringLiteral("/pdfeditcolors.svg")); 
 QIcon    editUndoIcon  =QIcon::fromTheme(QStringLiteral("edit-undo"),QIcon( iconPath+QStringLiteral("/edit-undo.svg")));
 QIcon    otherActionsIcon  =QIcon::fromTheme(QStringLiteral("document-export"),QIcon( iconPath+QStringLiteral("/otheractionsbutton.svg")));
 };

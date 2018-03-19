@@ -26,31 +26,31 @@
 
 #include "KSaneImageSaver.h"
 
-#include <QApplication>
-#include <QScrollArea>
-#include <QStringList>
-#include <QFileDialog>
-#include <QUrl>
 
-#include <QComboBox>
-#include <QMessageBox>
-#include <QTemporaryFile>
-#include <QDebug>
-#include <QImageWriter>
-#include <QMimeType>
-#include <QMimeDatabase>
-#include <QClipboard>
-#include <QToolButton>
-#include <QTimer>
-#include <QPainter>
-#include <QDesktopServices>
-#include <QProcess>
-#include <QMenu>
 #include <QAction>
+#include <QApplication>
+#include <QClipboard>
+#include <QComboBox>
 #include <QDate>
-#include <QStandardItemModel>
+#include <QDebug>
+#include <QDesktopServices>
+#include <QFileDialog>
+#include <QImageWriter>
 #include <QInputDialog>
+#include <QMenu>
+#include <QMessageBox>
+#include <QMimeDatabase>
+#include <QMimeType>
+#include <QPainter>
 #include <QPlainTextEdit>
+#include <QProcess>
+#include <QScrollArea>
+#include <QStandardItemModel>
+#include <QStringList>
+#include <QTemporaryFile>
+#include <QTimer>
+#include <QToolButton>
+#include <QUrl>
 
 #include <KAboutApplicationDialog>
 #include <KLocalizedString>
@@ -300,6 +300,7 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
           PdfAction2->setEnabled(false);
     }
 
+    
       // add actions to pdfmenu
       menuPdf->addAction(PdfAction1);
       menuPdf->addAction(PdfAction2);
@@ -1546,3 +1547,4 @@ QString kEasySkan::numberToString (int i, int length)
     return QString::fromStdString(stdStream.str());
     
 }
+
