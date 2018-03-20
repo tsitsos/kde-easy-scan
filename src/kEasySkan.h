@@ -171,7 +171,7 @@ QIcon    openWithIcon =QIcon::fromTheme(QStringLiteral("document-open"),QIcon( i
 QIcon    pdfCreateIcon =QIcon( iconPath+QStringLiteral("/pdfcreate.svg")); 
 QIcon    pdfAppendIcon =QIcon( iconPath+QStringLiteral("/pdfappend.svg")); 
 QIcon    pdfButtonIcon =QIcon( iconPath+QStringLiteral("/pdfbutton.svg")); 
-QIcon    pdfEditColorsIcon =QIcon( iconPath+QStringLiteral("/pdfeditcolors.svg")); 
+// QIcon    pdfEditColorsIcon =QIcon( iconPath+QStringLiteral("/pdfeditcolors.svg")); 
 QIcon    editUndoIcon  =QIcon::fromTheme(QStringLiteral("edit-undo"),QIcon( iconPath+QStringLiteral("/edit-undo.svg")));
 QIcon    otherActionsIcon  =QIcon::fromTheme(QStringLiteral("document-export"),QIcon( iconPath+QStringLiteral("/otheractionsbutton.svg")));
 };
