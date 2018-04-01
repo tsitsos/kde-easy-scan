@@ -67,19 +67,12 @@ private:
     void saveSettings();
     void loadScannerOptions();
 
-
 private Q_SLOTS:
-
-
-
-
-
     
+    QString getPasswd();
     QString numberToString (int i, int length);
-    bool gsMerge(const QString fName);
-    int autoNumber (const QString fName);
-    
-    
+    bool gsMerge(const QString fName1, const QString fName2);
+    int  autoNumber (const QString fName);
     void AppendToPdf();
     void CreatePdf();
     void ImageWriter(const QString fName,const QByteArray fFormat, int fQuality);
@@ -91,8 +84,8 @@ private Q_SLOTS:
     void availableDevices(const QList<KSaneWidget::DeviceInfo> &deviceList);
     void buttonPressed(const QString &optionName, const QString &optionLabel, bool pressed);
     void defaultScannerOptions();
-    void getImgDir();
-    void getPdfDir();
+    void docUploader(const QUrl fName);
+    void gsPasswd(const QString fName);
     void imageReady(QByteArray &, int, int, int, int);
     void mailTo();
     void pdfWriter(const QString fName, bool writeDocName);
@@ -105,7 +98,9 @@ private Q_SLOTS:
     void showHelp();
     void showSettingsDialog();
     
-    
+Q_SIGNALS: 
+    void processFinished();
+    void processStarted();
     
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
@@ -113,10 +108,11 @@ protected:
 private:
     KAboutData              *m_aboutData;
     KSaneWidget             *m_ksanew = nullptr;
-    Ui::kEasySkanSettings     m_settingsUi;
+    Ui::kEasySkanSettings    m_settingsUi;
     QDialog                 *m_settingsDialog = nullptr;
     QDialog                 *m_showImgDialog = nullptr;
-    // having this variable here is not so nice; ShowImgageDialog should be separate class
+    QDialog                  *msgDlg = nullptr;
+    QLabel                   *lbl = new QLabel(msgDlg);
     QString                  m_deviceName;
     QMap<QString, QString>   m_defaultScanOpts;
     QByteArray               m_data;
@@ -140,17 +136,31 @@ private:
     QString           imgDir;
     QString           pdfDir;
     QString           pdfNamePrefix;
+    QString           pdfPasswd;
     QString           tmpDir;
+    QString           mmailAddress;
+    QString           mmailBody;
+    QString           mmailClient;
+    QString           mmailSubject;
+    QUrl              SinglePdfFileUrl;
+    QUrl              imgUrl;
+    QUrl              pdfUrl;
     bool              dirNotFound=false;
     bool              firstPage=true;
     bool              firstPageCreated=false;
     bool              gimpExists;
     bool              gsExists;
     bool              gsMergeOk;
+    bool              gsPasswdOk;
     bool              isExisting=false;
+    bool              pdfPasswdIsSet=false;
     bool              pdfWriterSuccess;
+    bool              targetImgDirLocal=true;
+    bool              targetPdfDirLocal=true;
+    bool              uploadFileOk;
     bool              useIdentifier=true;
     bool              writeOk;
+    int               counter=0;
     int               fileNumber;
     int               imageQuality;
 

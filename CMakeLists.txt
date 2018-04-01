@@ -33,7 +33,7 @@ ecm_setup_version(
 )
 
 # Dependencies
-set(REQUIRED_QT_VERSION "5.2.0")
+set(REQUIRED_QT_VERSION "5.3.0")
 
 # Required Qt5 components to build this framework
 
@@ -49,7 +49,7 @@ find_package(PNG REQUIRED)
 
 include_directories(${PNG_INCLUDE_DIRS})
 
-set(kEasySkan_VERSION_STRING "0.2.0")
+set(kEasySkan_VERSION_STRING "0.3.0")
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/src/version.h)
 
