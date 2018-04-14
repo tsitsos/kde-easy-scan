@@ -41,6 +41,8 @@
 #include <QToolButton>
 #include <QPrintDialog>
 #include <QPrinter>
+#include <QProgressBar>
+#include <KIO/Job>
 
 class KAboutData;
 
@@ -66,41 +68,47 @@ private:
     void readSettings();
     void saveSettings();
     void loadScannerOptions();
+    void imageWriter(const QUrl fNameUrl, const QByteArray fFormat, int fQuality);
+
 
 private Q_SLOTS:
     
     QString getPasswd();
+    QString gsString(QString str0);
     QString numberToString (int i, int length);
-    bool gsMerge(const QString fName1, const QString fName2);
-    int  autoNumber (const QString fName);
-    void AppendToPdf();
-    void CreatePdf();
-    void ImageWriter(const QString fName,const QByteArray fFormat, int fQuality);
-    void OpenWithDefault();
-    void OpenWithGimp();
-    void OpenWithOther();
-    void SaveToSinglePdf();
+    bool gsMerge(const QString fName1, const QString fName2, const QString pwd);
+    int  autoNumber (const QUrl fNamePrefix);
     void alertUser(int type, const QString &strStatus);
+    void appendToPdf();
     void availableDevices(const QList<KSaneWidget::DeviceInfo> &deviceList);
     void buttonPressed(const QString &optionName, const QString &optionLabel, bool pressed);
+    void createPdf();
     void defaultScannerOptions();
-    void docUploader(const QUrl fName);
-    void gsPasswd(const QString fName);
+    void docUploader(const QString localName, const QUrl remoteName);
+    void gsCheckForPasswd (const QString fName, const QString pwd);
+    void gsEncrypt(const QString fName);
+    void gsQuality(const QString fName);
     void imageReady(QByteArray &, int, int, int, int);
     void mailTo();
-    void pdfWriter(const QString fName, bool writeDocName);
+    void openWithDefault();
+    void openWithGimp();
+    void openWithOther();
+    void pdfWriter(const QString fName, const QString docName, bool confirmOverwrite);
     void printImage();
+    void remoteEntries(KIO::Job *job, const KIO::UDSEntryList &list);
     void saveDocument();
     void saveScannerOptions();
+    void saveToSinglePdf();
     void saveWindowSize();
     void sendToClipboard();
     void showAboutDialog();
     void showHelp();
     void showSettingsDialog();
+    void killListJob();
     
-Q_SIGNALS: 
-    void processFinished();
-    void processStarted();
+// Q_SIGNALS: 
+//     void processFinished();
+//     void processStarted();
     
 protected:
     void closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
@@ -111,11 +119,13 @@ private:
     Ui::kEasySkanSettings    m_settingsUi;
     QDialog                 *m_settingsDialog = nullptr;
     QDialog                 *m_showImgDialog = nullptr;
-    QDialog                  *msgDlg = nullptr;
-    QLabel                   *lbl = new QLabel(msgDlg);
+    QLabel                   *lbl =new QLabel();
+    QLabel                   *lbl2 =new QLabel();
+    KIO::ListJob             *listjob = KIO::listDir(QUrl(),0,true);
     QString                  m_deviceName;
     QMap<QString, QString>   m_defaultScanOpts;
     QByteArray               m_data;
+    int                      aNumber;
     int                      m_width;
     int                      m_height;
     int                      m_bytesPerLine;
@@ -129,38 +139,41 @@ private:
     QImage            mImage;
     QPrinter         *printer ;
     QString           PdfExistingFileName;
-    QString           SinglePdfFileName ;
     QString           fileNumberAsString;
+    QString           pdfQuality;
     QString           imageFormatAsString;
     QString           imageNamePrefix;
     QString           imgDir;
-    QString           pdfDir;
-    QString           pdfNamePrefix;
-    QString           pdfPasswd;
-    QString           tmpDir;
     QString           mmailAddress;
     QString           mmailBody;
     QString           mmailClient;
     QString           mmailSubject;
-    QUrl              SinglePdfFileUrl;
+    QString           pdfDir;
+    QString           pdfNamePrefix;
+    QString           pdfPasswd;
+    QString           singlePdfFileName ;
+    QString           tmpDir;
+    QStringList   matchingFiles;
+    QStringList       remoteFileList;
     QUrl              imgUrl;
     QUrl              pdfUrl;
-    bool              dirNotFound=false;
+    QUrl              singlePdfFileUrl;
     bool              firstPage=true;
     bool              firstPageCreated=false;
     bool              gimpExists;
+    bool              gsEncryptOk;
+    bool              gsQualityOk;
     bool              gsExists;
+    bool              gsIsProtected;
     bool              gsMergeOk;
-    bool              gsPasswdOk;
+    bool              gsPasswdIsCorrect;
     bool              isExisting=false;
     bool              pdfPasswdIsSet=false;
     bool              pdfWriterSuccess;
-    bool              targetImgDirLocal=true;
-    bool              targetPdfDirLocal=true;
+    bool              remoteAccess=true;
+    bool              singlePdfFileExists;
     bool              uploadFileOk;
-    bool              useIdentifier=true;
     bool              writeOk;
-    int               counter=0;
     int               fileNumber;
     int               imageQuality;
 

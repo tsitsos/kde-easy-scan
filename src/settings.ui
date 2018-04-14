@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>571</width>
-    <height>618</height>
+    <height>668</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -147,6 +147,68 @@
       <string>Image saving</string>
      </property>
      <layout class="QGridLayout" name="gridLayout">
+      <item row="7" column="0" colspan="2">
+       <widget class="QGroupBox" name="Identifiers">
+        <property name="title">
+         <string>Filename Identifiers</string>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_4">
+         <item row="0" column="1">
+          <widget class="QRadioButton" name="dateTimeAppend">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Appends a unique 'date and time' identifier to filename. e.g., MyImage-2018.12.31-23.59.59.jpg.&lt;/p&gt;&lt;p&gt;(format is always yyyy.MM.dd-hh.mm.ss and is independent of user's locale settings)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="text">
+            <string>&amp;Date and Time</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QRadioButton" name="autoNumberAppend">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This scans the target directory for files named with the exact same prefix and automatically appends the right number.&lt;/p&gt;&lt;p&gt;Note that this overrides the other two options.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="text">
+            <string>Au&amp;to Number</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="3">
+          <widget class="QRadioButton" name="numberAppend">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This adds a number in a 4 digit format after &lt;span style=&quot; font-style:italic;&quot;&gt;Name Prefix,&lt;/span&gt; seperated by &amp;quot;-&amp;quot; e.g., My Image-0077.jpg.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="text">
+            <string>Man&amp;ual Number</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="4">
+          <widget class="QSpinBox" name="fileNumber"/>
+         </item>
+         <item row="0" column="0">
+          <widget class="QRadioButton" name="noneAppend">
+           <property name="text">
+            <string>&amp;None</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="5" column="0" colspan="3" alignment="Qt::AlignHCenter">
+       <widget class="QLabel" name="label_8">
+        <property name="font">
+         <font>
+          <pointsize>8</pointsize>
+          <italic>true</italic>
+         </font>
+        </property>
+        <property name="text">
+         <string>(Supported formats are: BMP,JPG,PNG,PBM,PGM,PPM,XBM,XPM)</string>
+        </property>
+       </widget>
+      </item>
       <item row="8" column="0" colspan="3">
        <layout class="QHBoxLayout" name="horizontalLayout_5">
         <item alignment="Qt::AlignRight">
@@ -170,6 +232,9 @@
       </item>
       <item row="11" column="0" alignment="Qt::AlignRight">
        <widget class="QLabel" name="label_3">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Directory used for temporary files. Any existing local folder with read-write access will do. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="text">
          <string>Temp Files Location:</string>
         </property>
@@ -234,6 +299,13 @@
         </item>
        </widget>
       </item>
+      <item row="3" column="1">
+       <widget class="KUrlRequester" name="saveImgDir">
+        <property name="mode">
+         <set>KFile::Directory</set>
+        </property>
+       </widget>
+      </item>
       <item row="3" column="0">
        <widget class="QLabel" name="label">
         <property name="toolTip">
@@ -249,41 +321,11 @@
       </item>
       <item row="11" column="1" colspan="2">
        <widget class="QLineEdit" name="tmpDir">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Directory used for temporary files. Any existing local folder with read-write access will do. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="text">
          <string>/tmp</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1">
-       <widget class="KUrlRequester" name="saveImgDir">
-        <property name="mode">
-         <set>KFile::Directory</set>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="0" colspan="3" alignment="Qt::AlignHCenter">
-       <widget class="QLabel" name="label_8">
-        <property name="font">
-         <font>
-          <pointsize>8</pointsize>
-          <italic>true</italic>
-         </font>
-        </property>
-        <property name="text">
-         <string>(Supported formats are: BMP,JPG,PNG,PBM,PGM,PPM,XBM,XPM)</string>
-        </property>
-       </widget>
-      </item>
-      <item row="12" column="0" colspan="3" alignment="Qt::AlignHCenter">
-       <widget class="QLabel" name="label_5">
-        <property name="font">
-         <font>
-          <pointsize>8</pointsize>
-          <italic>true</italic>
-         </font>
-        </property>
-        <property name="text">
-         <string>(any existing local folder with read-write access will do. ) </string>
         </property>
        </widget>
       </item>
@@ -391,71 +433,6 @@
         </item>
        </layout>
       </item>
-      <item row="7" column="0" colspan="3">
-       <layout class="QHBoxLayout" name="horizontalLayout_2">
-        <item>
-         <widget class="QCheckBox" name="dateTimeAppend">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Appends a unique 'date and time' identifier to filename. e.g., MyImage-2018.12.31-23.59.59.jpg.&lt;/p&gt;&lt;p&gt;(format is always yyyy.MM.dd-hh.mm.ss and is independent of user's locale settings)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Append Date and Time</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
-          <property name="tristate">
-           <bool>false</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QFrame" name="manualNumber">
-          <property name="frameShape">
-           <enum>QFrame::NoFrame</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Plain</enum>
-          </property>
-          <layout class="QHBoxLayout" name="horizontalLayout_3">
-           <item>
-            <widget class="QCheckBox" name="numberAppend">
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This adds a number in a 4 digit format after &lt;span style=&quot; font-style:italic;&quot;&gt;Name Prefix,&lt;/span&gt; seperated by &amp;quot;-&amp;quot; e.g., My Image-0077.jpg.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="text">
-              <string>Append Number, starting from:</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QSpinBox" name="fileNumber">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="minimum">
-              <number>1</number>
-             </property>
-             <property name="maximum">
-              <number>9999</number>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="autoNumberAppend">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This scans the target directory for files named with the exact same prefix and automatically appends the right number.&lt;/p&gt;&lt;p&gt;Note that this overrides the other two options.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Auto</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
       <item row="10" column="0" colspan="2">
        <layout class="QHBoxLayout" name="horizontalLayout_7">
         <item alignment="Qt::AlignLeft">
@@ -490,6 +467,11 @@
           <item>
            <property name="text">
             <string>low</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>medium</string>
            </property>
           </item>
           <item>
@@ -547,50 +529,18 @@
    </hints>
   </connection>
   <connection>
-   <sender>autoNumberAppend</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>manualNumber</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>537</x>
-     <y>264</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>335</x>
-     <y>264</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>autoNumberAppend</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>dateTimeAppend</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>537</x>
-     <y>264</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>97</x>
-     <y>264</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>numberAppend</sender>
    <signal>toggled(bool)</signal>
    <receiver>fileNumber</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>299</x>
-     <y>264</y>
+     <x>390</x>
+     <y>274</y>
     </hint>
     <hint type="destinationlabel">
-     <x>446</x>
-     <y>264</y>
+     <x>485</x>
+     <y>274</y>
     </hint>
    </hints>
   </connection>

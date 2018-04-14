@@ -20,6 +20,6 @@
 #ifndef kEasySkan_VERSION_H
 #define kEasySkan_VERSION_H
 
-static const char kEasySkan_version[] = "0.3.0";
+static const char kEasySkan_version[] = "0.5.0";
 
 #endif

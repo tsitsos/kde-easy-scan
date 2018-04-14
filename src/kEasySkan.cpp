@@ -59,6 +59,7 @@
 #include <KLocalizedString>
 #include <KIO/StatJob>
 #include <KIO/Job>
+#include <KDELibs4Support/kio/netaccess.h>
 #include <KJobWidgets>
 #include <kio/global.h>
 #include <KSharedConfig>
@@ -88,14 +89,11 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
 
 
 {
-    
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
     
     QDialogButtonBox *dlgButtonBoxBottom = new QDialogButtonBox(this);
     dlgButtonBoxBottom->setStandardButtons(QDialogButtonBox::Help | QDialogButtonBox::Close);
-    // was "User2:
     QPushButton *btnAbout = dlgButtonBoxBottom->addButton(i18n("About"), QDialogButtonBox::ButtonRole::ActionRole);
-    // was "User1":
     QPushButton *btnSettings = dlgButtonBoxBottom->addButton(i18n("Settings"), QDialogButtonBox::ButtonRole::ActionRole);
     btnSettings->setIcon(settingsIcon);
     
@@ -105,8 +103,19 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
     connect(m_ksanew, &KSaneWidget::userMessage, this, &kEasySkan::alertUser);
     connect(m_ksanew, &KSaneWidget::buttonPressed, this, &kEasySkan::buttonPressed);
     
+    lbl2->setMaximumHeight(20);
+    lbl2->setText(i18n("kEasySkan is ready."));
+    lbl2->show();
+    
+    QFrame *mDivider = new QFrame(this);
+    mDivider->setFrameShape(QFrame::HLine);
+    mDivider->setLineWidth(6);
+    
     mainLayout->addWidget(m_ksanew);
+    
     mainLayout->addWidget(dlgButtonBoxBottom);
+    mainLayout->addWidget(mDivider);
+    mainLayout->addWidget(lbl2);
     
     m_ksanew->initGetDeviceList();
     
@@ -153,9 +162,9 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
         
         m_settingsDialog->setWindowTitle(i18n("kEasySkan Settings"));
         
-        //         connect(m_settingsUi.getImgDirButton, &QPushButton::clicked, this, &kEasySkan::getImgDir);
-        //         connect(m_settingsUi.getPdfDirButton, &QPushButton::clicked, this, &kEasySkan::getPdfDir);
         connect(m_settingsUi.revertOptions,&QPushButton::clicked, this, &kEasySkan::defaultScannerOptions);
+        
+        m_settingsDialog->setMinimumSize(550,680);
         
         readSettings();
         
@@ -221,19 +230,6 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
         }
         
     }
-    
-   
-    // prepare the progress message dialog
-    {
-        msgDlg = new QDialog(this,Qt::SplashScreen);
-        QGridLayout *lout = new QGridLayout(msgDlg);
-        lbl->adjustSize();
-        lout->addWidget(lbl);
-        QProgressBar *prg = new QProgressBar(msgDlg);
-        prg->setRange(0,0);
-        lout->addWidget(prg);
-    }
-    
     
     
     // prepare the Show Image Dialog
@@ -354,25 +350,29 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
         mainLayout->addWidget(mDivider);
         mainLayout->addWidget(showImgButtonBox);
         
+        lbl->show();
+        lbl->setMaximumHeight(20);
+        lbl->setText(i18n("kEasySkan is ready."));
+        
+        mainLayout->addWidget(mDivider);
+        mainLayout->addWidget(lbl);
+        
         // connect buttons and actions to functions
         
-        connect(MoreActionsAction1, &QAction::triggered, this, &kEasySkan::OpenWithDefault);
-        connect(MoreActionsAction2, &QAction::triggered, this, &kEasySkan::OpenWithGimp);
+        connect(MoreActionsAction1, &QAction::triggered, this, &kEasySkan::openWithDefault);
+        connect(MoreActionsAction2, &QAction::triggered, this, &kEasySkan::openWithGimp);
         connect(MoreActionsAction3, &QAction::triggered, this, &kEasySkan::sendToClipboard);
         connect(MoreActionsAction4, &QAction::triggered, this, &kEasySkan::showSettingsDialog);
         connect(MoreActionsAction5, &QAction::triggered, this, &kEasySkan::mailTo);
-        connect(MoreActionsAction6, &QAction::triggered, this, &kEasySkan::OpenWithOther);
-        connect(PdfAction1, &QAction::triggered, this, &kEasySkan::CreatePdf);
-        connect(PdfAction2, &QAction::triggered, this, &kEasySkan::AppendToPdf);
+        connect(MoreActionsAction6, &QAction::triggered, this, &kEasySkan::openWithOther);
+        connect(PdfAction1, &QAction::triggered, this, &kEasySkan::createPdf);
+        connect(PdfAction2, &QAction::triggered, this, &kEasySkan::appendToPdf);
         connect(saveButton, &QPushButton::clicked, this, &kEasySkan::saveDocument);
         connect(printButton, &QPushButton::clicked, this, &kEasySkan::printImage);
         connect(discardButton, &QPushButton::clicked, m_showImgDialog,&QDialog::reject );
         
-        
         m_showImgDialog->resize(640, 480);
-        
     }
-    
     
     // save the default sane options for later use
     m_ksanew->getOptVals(m_defaultScanOpts);
@@ -381,8 +381,6 @@ kEasySkan::kEasySkan(const QString &device, QWidget *parent)
     loadScannerOptions();
     
     m_ksanew->initGetDeviceList();
-    
-    
 }
 
 void kEasySkan::showHelp()
@@ -390,7 +388,6 @@ void kEasySkan::showHelp()
     QUrl helpFile = QUrl::fromLocalFile(pathToExecFile);
     QUrl relative(QStringLiteral("../share/kEasySkan/help/index.html"));
     QDesktopServices::openUrl(helpFile.resolved(relative));
-    
 }
 
 void kEasySkan::setAboutData(KAboutData *aboutData)
@@ -413,7 +410,6 @@ void kEasySkan::saveWindowSize()
 }
 
 
-
 void kEasySkan::readSettings()
 {
     
@@ -426,6 +422,7 @@ void kEasySkan::readSettings()
     
     KConfigGroup imgSaving(KSharedConfig::openConfig(), "Image Saving");
     
+    m_settingsUi.noneAppend->setChecked(imgSaving.readEntry("No Identifier", false));
     m_settingsUi.dateTimeAppend->setChecked(imgSaving.readEntry("Append Date and Time", true));
     m_settingsUi.numberAppend->setChecked(imgSaving.readEntry("Append Number", false));
     m_settingsUi.autoNumberAppend->setChecked(imgSaving.readEntry("Auto Append Number", false));
@@ -443,8 +440,7 @@ void kEasySkan::readSettings()
     
     m_settingsUi.savePdfDir->setText(imgSaving.readEntry("PDF Save Location", QDir::homePath()));
     m_settingsUi.pdfPrefix->setText(imgSaving.readEntry("PDF Name Prefix", i18n("My PDF")));
-    m_settingsUi.pdfQuality->setCurrentText(imgSaving.readEntry("PDF Quality",QStringLiteral("high")));
-    m_settingsUi.pdfQuality->setEnabled(false);
+    m_settingsUi.pdfQuality->setCurrentText(imgSaving.readEntry("PDF Quality",QStringLiteral("medium")));
     m_settingsUi.pdfEncrypt->setChecked(imgSaving.readEntry("PDF Encrypt",false));
     
     //Temp Files Location
@@ -468,24 +464,28 @@ void kEasySkan::readSettings()
     }
     
     if (imgUrl.isLocalFile()) {
-        targetImgDirLocal=true;
         imgDir=imgUrl.path();
         if (!QFile::exists(imgDir)) {
-            dirNotFound=true;
             if (KMessageBox::questionYesNo(0,i18n("The directory ")+imgDir+i18n(" doesn't exist. Do you wish to create it?"))==3) {
                 QDir createDir;
                 if (createDir.mkpath(imgDir)==false) {
                     KMessageBox::error(0,imgDir+i18n("  couldn't be created. Check your pemissions."));
                 }
             }
-            
         }
-    } 
-    else 
-    {
-        targetImgDirLocal=false;
-        
     }
+    else {
+         if (!KIO::NetAccess::exists (pdfUrl,KIO::NetAccess::DestinationSide,nullptr)) {
+             KMessageBox::error(0,i18n("Remote host for saving images is unreachable."));
+             remoteAccess=false;
+         }
+         else {
+             remoteAccess=true;
+        }
+    }
+    
+    //todo create remote dir
+    
     imageQuality=(m_settingsUi.imgQuality->value());
     imageFormatAsString=m_settingsUi.imgFormat->text();
     imageFormat=imageFormatAsString.toUtf8(); // QByteArray
@@ -500,54 +500,40 @@ void kEasySkan::readSettings()
         m_settingsUi.savePdfDir->setUrl(pdfUrl);
     }
     
-    
     if (pdfUrl.isLocalFile()) {
-        targetPdfDirLocal=true;
         pdfDir=pdfUrl.path();
         if (!QFile::exists(pdfDir)) {
-            dirNotFound=true;
             if (KMessageBox::questionYesNo(0,i18n("The directory ")+pdfDir+i18n(" doesn't exist. Do you wish to create it?"))==3) {
                 QDir createDir;
                 if (createDir.mkpath(pdfDir)==false) {
                     KMessageBox::error(0,pdfDir+i18n("  couldn't be created. Check your pemissions."));
                 }    
             }
-            
         }
-        
     } 
-    else 
-    {
-        targetPdfDirLocal=false;
-        
+    else {
+         if (!KIO::NetAccess::exists (pdfUrl,KIO::NetAccess::DestinationSide,nullptr)) {
+             KMessageBox::error(0,i18n("Remote host for saving PDF files is unreachable."));
+             remoteAccess=false;
+         }
+         else {
+             remoteAccess=true;
+        }
     }
+    //todo create remote dir
     
     pdfNamePrefix=m_settingsUi.pdfPrefix->text();
-    dirNotFound=false;
     
-    
-    // check if auto number append is checked and disables the other two
-    
-    if (m_settingsUi.autoNumberAppend->isChecked()==true) {
-        m_settingsUi.numberAppend->setChecked(false);
-        m_settingsUi.dateTimeAppend->setChecked(false);
-    }
-    
-    if (m_settingsUi.dateTimeAppend->isChecked()==false && m_settingsUi.numberAppend->isChecked()==false && m_settingsUi.autoNumberAppend->isChecked()==false) {
-        if (m_settingsUi.saveMode->currentIndex()==fastImg || m_settingsUi.saveMode->currentIndex()==fastPdf) {
-            useIdentifier=false;
-        }
-    }
-    else{
-        useIdentifier=true;
-    }
+    if (m_settingsUi.pdfQuality->currentIndex()==0) pdfQuality=QStringLiteral("/screen");
+    if (m_settingsUi.pdfQuality->currentIndex()==1) pdfQuality=QStringLiteral("/ebook");
+    if (m_settingsUi.pdfQuality->currentIndex()==2) pdfQuality=QStringLiteral("");
+    if (m_settingsUi.pdfQuality->currentIndex()==3) pdfQuality=QStringLiteral("/printer");
+    if (m_settingsUi.pdfQuality->currentIndex()==4) pdfQuality=QStringLiteral("/prepress");
     
     //   "General"        
     
     KConfigGroup general(KSharedConfig::openConfig(), "General");
-    
     m_settingsUi.previewDPI->setCurrentText(general.readEntry("PreviewDPI", "100"));
-    
     m_settingsUi.setPreviewDPI->setChecked(general.readEntry("SetPreviewDPI", false));
     if (m_settingsUi.setPreviewDPI->isChecked()) {
         m_ksanew->setPreviewResolution(m_settingsUi.previewDPI->currentText().toFloat());
@@ -576,17 +562,15 @@ void kEasySkan::saveSettings()
     imgSaving.writeEntry("Image Format",m_settingsUi.imgFormat->text());
     imgSaving.writeEntry("Image Quality",m_settingsUi.imgQuality->value());
     imgSaving.writeEntry("File Number",m_settingsUi.fileNumber->value());
-    
     imgSaving.writeEntry("PDF Save Location",m_settingsUi.savePdfDir->text());
     imgSaving.writeEntry("PDF Name Prefix",m_settingsUi.pdfPrefix->text());
     imgSaving.writeEntry("PDF Quality",m_settingsUi.pdfQuality->currentText());
     imgSaving.writeEntry("PDF Encrypt",m_settingsUi.pdfEncrypt->isChecked());
+    imgSaving.writeEntry("No Identifier", m_settingsUi.noneAppend->isChecked());
     imgSaving.writeEntry("Append Date and Time", m_settingsUi.dateTimeAppend->isChecked());
     imgSaving.writeEntry("Append Number", m_settingsUi.numberAppend->isChecked());
     imgSaving.writeEntry("Auto Append Number", m_settingsUi.autoNumberAppend->isChecked());
-    
     imgSaving.writeEntry("Temp Files Location",m_settingsUi.tmpDir->text());
-    
     imgSaving.sync();
     
     //      General 
@@ -596,11 +580,9 @@ void kEasySkan::saveSettings()
     general.writeEntry("PreviewDPI", m_settingsUi.previewDPI->currentText());
     general.writeEntry("SetPreviewDPI", m_settingsUi.setPreviewDPI->isChecked());
     general.writeEntry("DisableAutoSelection", m_settingsUi.u_disableSelections->isChecked());
-    
     general.sync();
     
     readSettings(); // make changes, if any, effective at once.
-    
 }
 
 
@@ -638,14 +620,19 @@ void kEasySkan::imageReady(QByteArray &data, int w, int h, int bpl, int f)
 
 void kEasySkan::saveDocument()
 {
-    QString suggestedFileName ;
+    QString suggestedFileName,targetFileName ;
     QUrl suggestedFileUrl;
     QDateTime dateTime = dateTime.currentDateTime();
-    
+    QUrl targetFileUrl;
     
     // Standard Mode
     if (m_settingsUi.saveMode->currentIndex()==standardMode) {
         
+        suggestedFileName.append(imgUrl.toString()+imageNamePrefix);
+        
+        if (m_settingsUi.noneAppend->isChecked()) {
+            suggestedFileName.append(QStringLiteral(".")+imageFormatAsString);
+        }
         
         if (m_settingsUi.dateTimeAppend->isChecked()==true) {
             suggestedFileName.append(QStringLiteral("-")+dateTime.toString(QStringLiteral("yyyy.MM.dd-hh.mm.ss")));
@@ -659,25 +646,23 @@ void kEasySkan::saveDocument()
         
         if (m_settingsUi.autoNumberAppend->isChecked()==true) {
             suggestedFileName.append(QStringLiteral("-"));
-            QString strNm=numberToString(autoNumber(imgDir+imageNamePrefix+suggestedFileName),4);
+            QString strNm=numberToString(autoNumber(QUrl(suggestedFileName)),4);
+            if (aNumber==-1) return;
             suggestedFileName.append(strNm);
             suggestedFileName.append(QStringLiteral(".")+imageFormatAsString);
         }
         
-        suggestedFileUrl=imgUrl.resolved(QUrl(imageNamePrefix+suggestedFileName));
-        //             
-        //         KMessageBox::information(0,suggestedFileUrl.toString()+imgDir) ;
+        suggestedFileUrl=QUrl(suggestedFileName);
         
         QUrl flnm;
         QFileDialog *qfld = new QFileDialog() ;
         qfld->setAcceptMode(QFileDialog::AcceptSave);
-//         qfld->setOption(QFileDialog::DontUseNativeDialog,true);
+        qfld->setOptions(QFileDialog::DontConfirmOverwrite);
         qfld->setDirectoryUrl(imgUrl);
         qfld->selectUrl(suggestedFileUrl);
         if (qfld->exec()) {
             flnm=qfld->selectedUrls()[0];    
         }
-        
         
         if (flnm.isEmpty()) {
             KMessageBox::error(0,i18n("No filename given!"));
@@ -687,86 +672,60 @@ void kEasySkan::saveDocument()
         QFileInfo getSuffix (flnm.fileName());
         QString  suffix = getSuffix.suffix(); 
         
-        //         KMessageBox::information(0,flnm.toString());
-        
         if ((suffix.toUtf8())!=imageFormat) {
             KMessageBox::information(0,i18n("It looks like you are trying to save in a different format than the one in settings. \nIf this fails, check your settings to see the supported formats."));
         }
         
-        if (flnm.isLocalFile()) {
-            ImageWriter(flnm.toLocalFile(),imageFormat,imageQuality);
-            if (writeOk) {
-                if (m_settingsUi.numberAppend->isChecked()==true) {
-                    fileNumber+=1;
-                    m_settingsUi.fileNumber->setValue(fileNumber);
-                    saveSettings();
-                }
-            }
-            
-        }
-        else {
-            ImageWriter(tmpDir+flnm.fileName(),imageFormat,imageQuality);
-            docUploader(flnm);
-            if (uploadFileOk) {
-                if (m_settingsUi.numberAppend->isChecked()==true) {
-                    fileNumber+=1;
-                    m_settingsUi.fileNumber->setValue(fileNumber);
-                    saveSettings();
-                }
+        imageWriter(flnm,imageFormat,imageQuality);
+        if (writeOk) {
+            if (m_settingsUi.numberAppend->isChecked()==true) {
+                fileNumber+=1;
+                m_settingsUi.fileNumber->setValue(fileNumber);
+                saveSettings();
             }
         }
-        
+        return;
     }
     
     //check for identifier
     
-    if (useIdentifier==false) {
+    if (m_settingsUi.noneAppend->isChecked()) {
         KMessageBox::information(0,i18n("Fast saving modes need an identifier to work. Please select to append either Date and Time or Number."));
         showSettingsDialog();    
-        if (useIdentifier==false) {return;}
     }
     
     // fast save to image    
     if (m_settingsUi.saveMode->currentIndex()==fastImg) {
-       if (!targetImgDirLocal && m_settingsUi.autoNumberAppend->isChecked()) {
-           KMessageBox::information (0,i18n("Using auto numbering on remote files is not supported.\nPlease change your settings"));
-           showSettingsDialog();
-           saveDocument();
+        if (!imgUrl.isLocalFile() && !remoteAccess) {
+            KMessageBox::sorry(0,i18n("Remote host is unreachable.\nCheck your settings."));
+            return;
         }
+        suggestedFileName.clear();
         
         // append date and time
         if (m_settingsUi.dateTimeAppend->isChecked()==true) {
+            suggestedFileName.append(imgUrl.toString()+imageNamePrefix);
             suggestedFileName.append(QStringLiteral("-")+dateTime.toString(QStringLiteral("yyyy.MM.dd-hh.mm.ss")));    
             suggestedFileName.append(QStringLiteral(".")+imageFormatAsString);
-            
-            if (!targetImgDirLocal) {
-                suggestedFileName.prepend(tmpDir+imageNamePrefix);
-                ImageWriter(suggestedFileName,imageFormat,imageQuality);
-                QUrl q = QUrl::fromLocalFile(suggestedFileName);
-                suggestedFileUrl=QUrl(q.fileName());
-                docUploader( imgUrl.resolved(suggestedFileUrl) );
+            suggestedFileUrl=QUrl(suggestedFileName);
+            imageWriter(suggestedFileUrl,imageFormat,imageQuality);
+            if (writeOk==true && suggestedFileUrl.isLocalFile()) {
+                KMessageBox::information(0,suggestedFileName+i18n("  successfully saved."));
+                return;
             }
-            else {
-                suggestedFileName.prepend(imgDir+imageNamePrefix);
-                ImageWriter(suggestedFileName,imageFormat,imageQuality);
-                if (writeOk==true) {
-                    KMessageBox::information(0,suggestedFileName+i18n("  successfully saved."));
-                    return;
-                }
-            }
-            
         }
         
         // append auto numbering
         if (m_settingsUi.autoNumberAppend->isChecked()==true) {
-            
-            suggestedFileName.prepend(imgDir+imageNamePrefix);
+            suggestedFileName.append(imgUrl.toString()+imageNamePrefix);
             suggestedFileName.append(QStringLiteral("-"));
-            QString strNm = numberToString(autoNumber(suggestedFileName),4);
+            QString strNm = numberToString(autoNumber(QUrl(suggestedFileName)),4);
+            if (aNumber==-1) return;
             suggestedFileName.append(strNm);
             suggestedFileName.append(QStringLiteral(".")+imageFormatAsString);
-            ImageWriter(suggestedFileName,imageFormat,imageQuality);
-            if (writeOk==true) {
+            suggestedFileUrl=QUrl(suggestedFileName);
+            imageWriter(suggestedFileUrl,imageFormat,imageQuality);
+            if (writeOk==true  && suggestedFileUrl.isLocalFile()) {
                 KMessageBox::information(0,suggestedFileName+i18n("  successfully saved."));
                 return;
             }
@@ -775,55 +734,31 @@ void kEasySkan::saveDocument()
         // append manual numbering 5
         if (m_settingsUi.numberAppend->isChecked()==true) {
             
+            suggestedFileName.append(imgUrl.toString()+imageNamePrefix);
             suggestedFileName.append(QStringLiteral("-")+numberToString(fileNumber,4));
             suggestedFileName.append(QStringLiteral(".")+imageFormatAsString);
-            
-            if (!targetImgDirLocal) {
-                suggestedFileName.prepend(tmpDir+imageNamePrefix);
-                ImageWriter(suggestedFileName,imageFormat,imageQuality);
-                QUrl q = QUrl::fromLocalFile(suggestedFileName);
-                suggestedFileUrl=QUrl(q.fileName());
-                docUploader( imgUrl.resolved(suggestedFileUrl) );
-                if (uploadFileOk) {
-                    fileNumber+=1;
-                    m_settingsUi.fileNumber->setValue(fileNumber);
-                    saveSettings();   
-                    return;
-                }
+            suggestedFileUrl=QUrl(suggestedFileName);
+            imageWriter(suggestedFileUrl,imageFormat,imageQuality);
+            if (writeOk==true)  {
+                if (suggestedFileUrl.isLocalFile()) KMessageBox::information(0,suggestedFileName+i18n("  successfully saved."));
+                fileNumber+=1;
+                m_settingsUi.fileNumber->setValue(fileNumber);
+                saveSettings();   
+                return;
             }
-            else {
-                int j;
-                suggestedFileName.prepend(imgDir+imageNamePrefix);
-                if (QFile::exists(suggestedFileName)==true) {
-                    j = KMessageBox::warningContinueCancel(0,suggestedFileName+i18n(" already exists.\nOverwrite ?")); 
-                }
-                if (j==2) {return;}
-                ImageWriter(suggestedFileName,imageFormat,imageQuality);
-                
-                if (writeOk==true) {
-                    fileNumber+=1;
-                    m_settingsUi.fileNumber->setValue(fileNumber);
-                    saveSettings();    
-                    KMessageBox::information(0,suggestedFileName+i18n("  successfully saved."));
-                    return;                
-                }
-            }
-            
         }
-        
-        
     }
     
     
     // fast save to pdf
     
     if (m_settingsUi.saveMode->currentIndex()==fastPdf) {
-        
-        if (!targetPdfDirLocal && m_settingsUi.autoNumberAppend->isChecked()) {
-           KMessageBox::information (0,i18n("Using auto numbering on remote files is not supported.\nPlease change your settings"));
-           showSettingsDialog();
-           saveDocument();
+        if (!pdfUrl.isLocalFile() && !remoteAccess) {
+            KMessageBox::sorry(0,i18n("Remote host is unreachable.\nCheck your settings."));
+            return;
         }
+        
+        suggestedFileName.clear();
         
         if (m_settingsUi.pdfEncrypt->isChecked() && !pdfPasswdIsSet) {
             pdfPasswd=getPasswd();
@@ -834,121 +769,79 @@ void kEasySkan::saveDocument()
             pdfPasswdIsSet=true;
         }
         
-        // append date and time
+        suggestedFileName.append(pdfUrl.toString()+pdfNamePrefix);
+        
         if (m_settingsUi.dateTimeAppend->isChecked()==true) {
-            suggestedFileName.append(QStringLiteral("-")+dateTime.toString(QStringLiteral("yyyy.MM.dd-hh.mm.ss")));    
+            suggestedFileName.append(QStringLiteral("-")+dateTime.toString(QStringLiteral("yyyy.MM.dd-hh.mm.ss")));
             suggestedFileName.append(QStringLiteral(".pdf"));
-            
-            
-            if (targetPdfDirLocal) {
-                suggestedFileName.prepend(pdfDir+pdfNamePrefix);
-                pdfWriter(suggestedFileName,true);
-                if (pdfWriterSuccess==true) {
-                    if (m_settingsUi.pdfEncrypt->isChecked()) {
-                        gsPasswd(suggestedFileName);
-                        if (!gsPasswdOk) return;
-                    }
-                    KMessageBox::information(0,suggestedFileName+i18n("  successfully saved."));
-                    return;
-                }
-            } 
-            else {
-                suggestedFileName.prepend(tmpDir+pdfNamePrefix);
-                pdfWriter(suggestedFileName,true);
-                if (!pdfWriterSuccess) return;
-                if (m_settingsUi.pdfEncrypt->isChecked()) {
-                        gsPasswd(suggestedFileName);
-                        if (!gsPasswdOk) return;
-                    }
-                QUrl q = QUrl::fromLocalFile(suggestedFileName);
-                suggestedFileUrl=QUrl(q.fileName());
-                docUploader( pdfUrl.resolved(suggestedFileUrl) );
-                if (!uploadFileOk) return;
-                
-            }
         }
         
-        // append auto numberting
-        if (m_settingsUi.autoNumberAppend->isChecked()==true) {
-            suggestedFileName.prepend(pdfDir+pdfNamePrefix);
-            suggestedFileName.append(QStringLiteral("-"));
-            QString strNm = numberToString(autoNumber(suggestedFileName),4);
-            suggestedFileName.append(strNm);
-            suggestedFileName.append(QStringLiteral(".pdf"));
-            pdfWriter(suggestedFileName,true);
-            if (pdfWriterSuccess==true) {
-                if (m_settingsUi.pdfEncrypt->isChecked()) {
-                        gsPasswd(suggestedFileName);
-                        if (!gsPasswdOk) return;
-                    }
-                KMessageBox::information(0,suggestedFileName+i18n("  successfully saved."));
-                return;
-            }
-        }
-        
-        
-        // append manual numbering
         if (m_settingsUi.numberAppend->isChecked()==true) {
-            
             suggestedFileName.append(QStringLiteral("-")+numberToString(fileNumber,4));
             suggestedFileName.append(QStringLiteral(".pdf"));
-            
-            if (!targetPdfDirLocal) {
-                suggestedFileName.prepend(tmpDir+pdfNamePrefix);
-                pdfWriter(suggestedFileName,true);
-                if (!pdfWriterSuccess) return;
-                if (m_settingsUi.pdfEncrypt->isChecked()) {
-                        gsPasswd(suggestedFileName);
-                        if (!gsPasswdOk) return;
-                    }
-                QUrl q = QUrl::fromLocalFile(suggestedFileName);
-                suggestedFileUrl=QUrl(q.fileName());
-                docUploader( pdfUrl.resolved(suggestedFileUrl) );
-                if (uploadFileOk) {
-                    fileNumber+=1;
-                    m_settingsUi.fileNumber->setValue(fileNumber);
-                    saveSettings();   
-                    return;
-                }
-            }
-            else {
-                int j;
-                suggestedFileName.prepend(pdfDir+pdfNamePrefix);
-                if (QFile::exists(suggestedFileName)==true) {
-                    j = KMessageBox::warningContinueCancel(0,suggestedFileName+i18n(" already exists.\nOverwrite ?")); 
-                }
-                if (j==2) {return;}
-                pdfWriter(suggestedFileName,true);
-                
-                if (pdfWriterSuccess) {
-                    if (m_settingsUi.pdfEncrypt->isChecked()) {
-                        gsPasswd(suggestedFileName);
-                        if (!gsPasswdOk) return;
-                    }
-                    fileNumber+=1;
-                    m_settingsUi.fileNumber->setValue(fileNumber);
-                    saveSettings();    
-                    KMessageBox::information(0,suggestedFileName+i18n("  successfully saved."));
-                    return;                
-                }                     
-            }
         }
+        
+        if (m_settingsUi.autoNumberAppend->isChecked()==true) {
+            suggestedFileName.append(QStringLiteral("-"));
+            QString strNm=numberToString(autoNumber(QUrl(suggestedFileName)),4);
+            if (aNumber==-1) return;
+            suggestedFileName.append(strNm);
+            suggestedFileName.append(QStringLiteral(".pdf"));
+        }
+        
+        targetFileUrl=QUrl(suggestedFileName);
+        
+        if (targetFileUrl.isLocalFile()) {
+            targetFileName=pdfUrl.path()+targetFileUrl.fileName();
+        }
+        else {
+            targetFileName=tmpDir+targetFileUrl.fileName();
+        }
+        
+        pdfWriter(targetFileName,targetFileUrl.fileName(),true);
+        
+        if (!pdfWriterSuccess)  return;
+        
+        if (m_settingsUi.pdfQuality->currentIndex()<4) {
+            gsQuality(targetFileName);
+            if (!gsQualityOk) return;
+        }
+        
+        if (m_settingsUi.pdfEncrypt->isChecked() ) {
+            gsEncrypt(targetFileName);
+            if (!gsEncryptOk) return;
+        }
+        
+        if (!targetFileUrl.isLocalFile()) {
+            docUploader(targetFileName,targetFileUrl);
+            if (!uploadFileOk) return;
+            QFile::remove(targetFileName);
+        }
+        else {
+            KMessageBox::information(0,targetFileName+i18n("  successfully saved."));
+        }
+        
+        if (m_settingsUi.numberAppend->isChecked()==true) {
+            fileNumber+=1;
+            m_settingsUi.fileNumber->setValue(fileNumber);
+            saveSettings();
+        }
+        
+        lbl2->setText(i18n("kEasySkan is ready."));
     }
     
     // Fast save to single Pdf
     
     if (m_settingsUi.saveMode->currentIndex()==singlePdf) {
         if (firstPage==true) {
-            SinglePdfFileName=QString();
-            SinglePdfFileUrl=QUrl();
+            singlePdfFileName=QString();
+            singlePdfFileUrl=QUrl();
         }
-        SaveToSinglePdf();
+        saveToSinglePdf();
         if (firstPageCreated==true) {firstPage=false;}
     }
     
 }
-
-
 
 
 void kEasySkan::showAboutDialog()
@@ -1027,20 +920,16 @@ void kEasySkan::buttonPressed(const QString &optionName, const QString &optionLa
 
 void kEasySkan::printImage()
 {
-    
-    QMessageBox *msgBox2 = new QMessageBox();
-    msgBox2->setText(i18n("Preparing to print. Please wait..."));
-    msgBox2->setInformativeText(i18n("(This dialog will autoclose)"));
-    msgBox2->setIcon(QMessageBox::Information);
-    msgBox2->setStandardButtons(QMessageBox::Ok);
-    msgBox2->open();
-    QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents,1000); //(workaround) : allow some time for the msgbox to render 
+    lbl->setText(i18n("Preparing to print. Please wait..."));
+    lbl2->setText(i18n("Preparing to print. Please wait..."));
+    qApp->processEvents();
     
     QPrinter *printer = new QPrinter(QPrinter::HighResolution);
     
     QPrintDialog printDialog(printer, this);
     
-    msgBox2->close();
+    lbl->clear();
+    lbl2->clear();
     
     if (printDialog.exec()) {
         
@@ -1052,19 +941,19 @@ void kEasySkan::printImage()
         painter.setWindow(mImage.rect());
         painter.drawImage(0, 0, mImage);
         painter.end();
-        
     }
-    
+    lbl->setText(i18n("kEasySkan is ready."));
 }
 
 
-void kEasySkan::CreatePdf()
+void kEasySkan::createPdf()
 {
     QString suggestedFileName,targetFileName ;
     QUrl suggestedFileUrl ;
     QDateTime dateTime = dateTime.currentDateTime();
     
-    suggestedFileName.append(pdfNamePrefix);
+    
+    suggestedFileName.append(pdfUrl.toString()+pdfNamePrefix);
     
     if (m_settingsUi.dateTimeAppend->isChecked()==true) {
         suggestedFileName.append(QStringLiteral("-")+dateTime.toString(QStringLiteral("yyyy.MM.dd-hh.mm.ss")));
@@ -1078,101 +967,99 @@ void kEasySkan::CreatePdf()
     
     if (m_settingsUi.autoNumberAppend->isChecked()==true) {
         suggestedFileName.append(QStringLiteral("-"));
-        QString strNm=numberToString(autoNumber(pdfDir+suggestedFileName),4);
+        QString strNm=numberToString(autoNumber(QUrl(suggestedFileName)),4);
+        if (aNumber==-1) return;
         suggestedFileName.append(strNm);
         suggestedFileName.append(QStringLiteral(".pdf"));
     }
     
-    suggestedFileUrl=pdfUrl.resolved(QUrl(suggestedFileName));
+    suggestedFileUrl=QUrl(suggestedFileName);
     QUrl targetFileUrl;
-        QFileDialog *qfld = new QFileDialog() ;
-        qfld->setAcceptMode(QFileDialog::AcceptSave);
-        qfld->setDirectoryUrl(imgUrl);
-        qfld->selectUrl(suggestedFileUrl);
-        if (qfld->exec()) {
-            targetFileUrl=qfld->selectedUrls()[0];    
-        }
- 
+    QFileDialog *qfld = new QFileDialog() ;
+    qfld->setAcceptMode(QFileDialog::AcceptSave);
+    qfld->setDirectoryUrl(imgUrl);
+    qfld->selectUrl(suggestedFileUrl);
+    if (qfld->exec()) {
+        targetFileUrl=qfld->selectedUrls()[0];    
+    }
+    
     
     if (targetFileUrl.isEmpty()) {
         KMessageBox::error(0,i18n("No filename given!"));
         return;
     }
     
+    QString last4=(targetFileUrl.toString()).right(4);
+    if ((last4.contains(QStringLiteral(".pdf"),Qt::CaseInsensitive))==false) {
+        targetFileName=targetFileUrl.toString();
+        targetFileName.append(QStringLiteral(".pdf"));
+        targetFileUrl=QUrl(targetFileName);
+    }
     
     if (m_settingsUi.pdfEncrypt->isChecked() && !pdfPasswdIsSet) {
-            pdfPasswd=getPasswd();
-            if (pdfPasswd.isEmpty()) {
-                KMessageBox::information (0,i18n("No password was given! PDF encryption will be disabled."));
-                m_settingsUi.pdfEncrypt->setChecked(false);
-            } 
-            pdfPasswdIsSet=true;
-        }
+        pdfPasswd=getPasswd();
+        if (pdfPasswd.isEmpty()) return; 
+        pdfPasswdIsSet=true;
+    }
     
     if (targetFileUrl.isLocalFile()) {
         targetFileName=targetFileUrl.toLocalFile();
-        pdfWriter(targetFileName,true);
-        if (pdfWriterSuccess==false) {
-            return;
-        }
-        
-        if (m_settingsUi.pdfEncrypt->isChecked()) {
-            gsPasswd(targetFileName);
-            if (!gsPasswdOk) return;
-        }
-        
-        if (m_settingsUi.numberAppend->isChecked()==true) {
-            fileNumber+=1;
-            m_settingsUi.fileNumber->setValue(fileNumber);
-            saveSettings();
-        }
-        
-        bool openAfterFinish = false;
-        QDialog *dialog = new QDialog(this, Qt::Dialog);
-        QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Yes);
-        KMessageBox::createKMessageBox(dialog,
-                                       buttons,
-                                       QMessageBox::Information,
-                                       targetFileName+i18n("  was successfully created."),
-                                       QStringList(),
-                                       i18n("Open file."),
-                                       &openAfterFinish,
-                                       KMessageBox::Notify);
-        
-        if (openAfterFinish==true) {
-            QDesktopServices::openUrl(QUrl::fromLocalFile(targetFileName));
-        }
+    }
+    else {
+        targetFileName=tmpDir+targetFileUrl.fileName();
+    }
+    pdfWriter(targetFileName,targetFileUrl.fileName(),false);
+    if (!pdfWriterSuccess) return;
+    
+    if (m_settingsUi.pdfQuality->currentIndex()<4) {
+        gsQuality(targetFileName);
+        if (!gsQualityOk) return;
     }
     
-    else {
-        suggestedFileName=tmpDir+targetFileUrl.fileName();
-        pdfWriter(suggestedFileName,true);
-        if (pdfWriterSuccess==false) {
-            return;
-        }
-        
-        if (m_settingsUi.pdfEncrypt->isChecked()) {
-            gsPasswd(suggestedFileName);
-            if (!gsPasswdOk) return;
-        }
-        
-        docUploader( targetFileUrl );
-        if (uploadFileOk) {
-            if (m_settingsUi.numberAppend->isChecked()==true) {
-                fileNumber+=1;
-                m_settingsUi.fileNumber->setValue(fileNumber);
-                saveSettings();
-            }
-        }
+    if (m_settingsUi.pdfEncrypt->isChecked()) {
+        gsEncrypt(targetFileName);
+        if (!gsEncryptOk) return;
     }
+    
+    if (!targetFileUrl.isLocalFile()) {
+        docUploader(targetFileName,targetFileUrl);
+        if (uploadFileOk) QFile::remove(targetFileName);
+        else return;
+    }
+    
+    if (m_settingsUi.numberAppend->isChecked()==true) {
+        fileNumber+=1;
+        m_settingsUi.fileNumber->setValue(fileNumber);
+        saveSettings();
+    }
+    
+    bool openAfterFinish = false;
+    QDialog *dialog = new QDialog(this, Qt::Dialog);
+    QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Yes);
+    KMessageBox::createKMessageBox(dialog,
+                                   buttons,
+                                   QMessageBox::Information,
+                                   targetFileUrl.toString()+i18n("  was successfully created."),
+                                   QStringList(),
+                                   i18n("Open file."),
+                                   &openAfterFinish,
+                                   KMessageBox::Notify);
+    
+    if (openAfterFinish==true) {
+        QDesktopServices::openUrl(targetFileUrl);
+    }
+    
     pdfPasswdIsSet=false;
+    lbl->setText(i18n("kEasySkan is ready."));
 }
 
 
-void kEasySkan::AppendToPdf() // works only with local files
+void kEasySkan::appendToPdf()
 
 {
-    
+    QUrl PdfExistingFileUrl;
+    QString passwd;
+    bool pdfEncryptChanged=false;
     bool openAfterFinish = false;
     QDialog *dialog = new QDialog(this, Qt::Dialog);
     QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Yes);
@@ -1185,27 +1072,62 @@ void kEasySkan::AppendToPdf() // works only with local files
                                    &openAfterFinish,
                                    KMessageBox::Notify);
     
-    if (PdfExistingFileName.isEmpty()) {
-        if (!pdfUrl.isLocalFile()) { 
-            pdfDir=QDir::homePath()+QStringLiteral("/");
-        }
-        PdfExistingFileName = QFileDialog::getOpenFileName(this, i18n("Open PDF..."), pdfDir, i18n("PDF Files (*.pdf *.PDF *.Pdf)"));
+    if (PdfExistingFileUrl.isEmpty()) {
+        PdfExistingFileUrl = QFileDialog::getOpenFileUrl(this, i18n("Open PDF..."), pdfUrl, i18n("PDF Files (*.pdf *.PDF *.Pdf)"));
     }
     else 
     {
-        PdfExistingFileName = QFileDialog::getOpenFileName(this, i18n("Open PDF..."), PdfExistingFileName, i18n("PDF Files (*.pdf *.PDF *.Pdf)"));
+        QFileDialog *qfld = new QFileDialog() ;
+        qfld->setAcceptMode(QFileDialog::AcceptOpen);
+        qfld->setOptions(QFileDialog::DontConfirmOverwrite);
+        qfld->setDirectoryUrl(PdfExistingFileUrl.resolved(QUrl(QStringLiteral("./"))));
+        qfld->selectUrl(PdfExistingFileUrl);
+        if (qfld->exec()) {
+            PdfExistingFileUrl=qfld->selectedUrls()[0];    
+        }
     }
     
-    if (PdfExistingFileName.isEmpty()) {
+    if (PdfExistingFileUrl.isEmpty()) {
         KMessageBox::error(0,i18n("No filename given!"));
         return;
     }
     
-    pdfWriter(tmpDir+QStringLiteral(".kEasySkan.pdf"),false); //writes tmp pdf
-    
-    if (pdfWriterSuccess==false) {
+    if (PdfExistingFileUrl.isLocalFile()) {
+        PdfExistingFileName=PdfExistingFileUrl.toLocalFile();
+    }
+    else {
+        PdfExistingFileName=tmpDir+PdfExistingFileUrl.fileName();
+        KIO::NetAccess::download(PdfExistingFileUrl, PdfExistingFileName,nullptr);
         
-        return;
+    }
+    
+    QFile::copy(PdfExistingFileName,PdfExistingFileName+QStringLiteral(".orig"));
+    
+    gsCheckForPasswd(PdfExistingFileName,QString()); // check if selected file is protected
+    if (gsIsProtected) {
+        bool ok;
+        passwd = QInputDialog::getText(this, i18n("Enter password"),
+                                       PdfExistingFileName + i18n(" seems to be password protected.\nEnter password to continue. The resulting file will be encrypted using the existing password.")
+                                       , QLineEdit::Password,
+                                       QString(), &ok);
+        if (!ok) return;
+        gsCheckForPasswd(PdfExistingFileName,passwd); //check if passwd from user input is right
+        if (gsPasswdIsCorrect) {
+            pdfPasswd=passwd;
+            pdfPasswdIsSet=true;
+            if (!m_settingsUi.pdfEncrypt->isChecked()) {
+                m_settingsUi.pdfEncrypt->setChecked(true);
+                pdfEncryptChanged=true;
+            }
+        }
+        else {
+            KMessageBox::error(0,i18n("Wrong password!"));
+            QFile::remove (PdfExistingFileName+QStringLiteral(".orig"));
+            return;
+        }
+    }
+    else {
+        passwd=QString();
     }
     
     if (m_settingsUi.pdfEncrypt->isChecked() && !pdfPasswdIsSet) {
@@ -1217,163 +1139,228 @@ void kEasySkan::AppendToPdf() // works only with local files
         pdfPasswdIsSet=true;
     }
     
-    gsMerge(PdfExistingFileName,tmpDir+QStringLiteral(".kEasySkan.pdf")); //merge existing pdf with tmp pdf
+    pdfWriter(tmpDir+QStringLiteral(".kEasySkan.pdf"),PdfExistingFileUrl.fileName(),false); //writes tmp pdf
+    
+    if (pdfWriterSuccess==false) {
+        QFile::remove (PdfExistingFileName+QStringLiteral(".orig"));
+        return;
+    }
+    
+    gsMerge(PdfExistingFileName,tmpDir+QStringLiteral(".kEasySkan.pdf"),passwd); //merge existing pdf with tmp pdf
     
     if (gsMergeOk==false) {
         KMessageBox::error (0,PdfExistingFileName+i18n(" was not upadated!"));
+        QFile::remove(PdfExistingFileName);
+        QFile::rename (PdfExistingFileName+QStringLiteral(".orig"),PdfExistingFileName);
         return;
     }
     else {
         if (m_settingsUi.pdfEncrypt->isChecked()) {
-            gsPasswd(PdfExistingFileName);
-            if (!gsPasswdOk) return;
+            gsEncrypt(PdfExistingFileName);
+            if (!gsEncryptOk) return;
         }
-        KMessageBox::information (0,PdfExistingFileName+i18n("  has been successfully updated." ));
+        
+        if (!PdfExistingFileUrl.isLocalFile()) {
+            docUploader(PdfExistingFileName,PdfExistingFileUrl);
+            if (!uploadFileOk) return;
+            QString bu=PdfExistingFileUrl.toString()+QStringLiteral(".orig");
+            QUrl backUpUrl=QUrl(bu);
+            backUpUrl.resolved(QUrl(QStringLiteral("./")+PdfExistingFileUrl.fileName()+QStringLiteral(".orig")));
+            docUploader(PdfExistingFileName+QStringLiteral(".orig"),backUpUrl);
+            QFile::remove(PdfExistingFileName);
+            QFile::remove(PdfExistingFileName+QStringLiteral(".orig"));
+        }
+        else 
+        {
+            KMessageBox::information (0,PdfExistingFileUrl.toString()+i18n("  has been successfully updated." ));
+        }
+        
+        if (pdfEncryptChanged) m_settingsUi.pdfEncrypt->setChecked(false);
+        saveSettings();
+        pdfPasswdIsSet=false;
     }
     
     if (openAfterFinish==true) {
-        QDesktopServices::openUrl(QUrl::fromLocalFile(PdfExistingFileName));
+        QDesktopServices::openUrl(PdfExistingFileUrl);
     }
-    
-    gsPasswdOk=false;
+    lbl->setText(i18n("kEasySkan is ready."));
 }
 
 
 
-void kEasySkan::SaveToSinglePdf()
+void kEasySkan::saveToSinglePdf()
 {
-    
+    bool pdfEncryptChanged=false;
+    QString passwd;
     QDialog *dialogSingle = new QDialog(this, Qt::Dialog);
     QDialogButtonBox *buttonsSingle = new QDialogButtonBox(QDialogButtonBox::Yes);
     bool lastPage;
     
     if (firstPage==true) {
-        SinglePdfFileUrl = QFileDialog::getSaveFileUrl(this, i18n("Save PDF..."), pdfUrl, i18n("PDF Files (*.pdf *.PDF *.Pdf)"),0,QFileDialog::DontConfirmOverwrite);
+        singlePdfFileExists=false;
+        QFileDialog *qfld = new QFileDialog() ;
+        qfld->setAcceptMode(QFileDialog::AcceptSave);
+        qfld->setOptions(QFileDialog::DontConfirmOverwrite);
+        qfld->setDirectoryUrl(pdfUrl);
+        qfld->selectUrl(singlePdfFileUrl);
+        if (qfld->exec()) {
+            singlePdfFileUrl=qfld->selectedUrls()[0];    
+        }
         
-        if (QFile::exists(SinglePdfFileUrl.toLocalFile()) && SinglePdfFileUrl.isLocalFile()) {
-            SinglePdfFileName=SinglePdfFileUrl.toLocalFile();
+        if (QFile::exists(singlePdfFileUrl.toLocalFile()) && singlePdfFileUrl.isLocalFile()) {
+            singlePdfFileName=singlePdfFileUrl.toLocalFile();
+            singlePdfFileExists=true;
+            
+        }
+        if (!singlePdfFileUrl.isLocalFile()) {
+            if (KIO::NetAccess::exists (singlePdfFileUrl,KIO::NetAccess::DestinationSide,nullptr)) {
+                singlePdfFileName=tmpDir+singlePdfFileUrl.fileName();
+                singlePdfFileExists=true;
+                KIO::NetAccess::download(singlePdfFileUrl, singlePdfFileName,nullptr);
+            }
+        }
+        
+        if (singlePdfFileExists)
+        {
+            QFile::copy(singlePdfFileName, singlePdfFileName + QStringLiteral(".orig"));
             int i = KMessageBox::warningContinueCancel(0,i18n("You've chosen an existing PDF file. Each new scan (from now on) will be appended to it\nOriginal file will be backed up."));
             if (i == 5) { // continue
-                isExisting=true;
+                
                 firstPageCreated=true;
-                QFile::copy(SinglePdfFileName, SinglePdfFileName + (QStringLiteral(".orig")));
                 return;
             }
             else   { // cancel 
                 firstPageCreated=false;
                 return;
             }   
-        } 
-        if (SinglePdfFileUrl.isEmpty()==true) {
+        }
+        
+        if (singlePdfFileUrl.isEmpty()==true) {
             KMessageBox::error(0,i18n("No filename given!"));
             firstPageCreated=false;
             return;
         }
         
-        QString last4=(SinglePdfFileUrl.toString()).right(4);
+        QString last4=(singlePdfFileUrl.toString()).right(4);
         if ((last4.contains(QStringLiteral(".pdf"),Qt::CaseInsensitive))==false) {
-            SinglePdfFileName=SinglePdfFileUrl.toString();
-            SinglePdfFileName.append(QStringLiteral(".pdf"));
-            SinglePdfFileUrl=QUrl(SinglePdfFileName);
+            singlePdfFileName=singlePdfFileUrl.toString();
+            singlePdfFileName.append(QStringLiteral(".pdf"));
+            singlePdfFileUrl=QUrl(singlePdfFileName);
         }
         
-        if (SinglePdfFileUrl.isLocalFile()) {
-            SinglePdfFileName=SinglePdfFileUrl.toLocalFile();
-            pdfWriter(SinglePdfFileName,true); //writes the fisrt page 
-            
-            if (pdfWriterSuccess==true) {
-                KMessageBox::information (0,SinglePdfFileName+i18n("  has been successfully created. Each new scan will be appended to it.")); 
-                firstPageCreated=true;
-                return;
-            }     
-            else {
-                firstPageCreated=false;
-                return;
-            }
+        if (singlePdfFileUrl.isLocalFile()) {
+            singlePdfFileName=(singlePdfFileUrl.toString()).remove(0,7);
         }
-        else { //remote file
-            counter+=1;
-            pdfWriter(tmpDir+SinglePdfFileUrl.fileName(),true);
-            if (pdfWriterSuccess) {
-                KMessageBox::information (0,i18n("1st page was successfully created. Each new scan will be appended to it.")); 
-                firstPageCreated=true;
-                return;
-            }
-            else {
-                return;
-            }
+        else {
+            singlePdfFileName=tmpDir+singlePdfFileUrl.fileName();
         }
+        
+        pdfWriter(singlePdfFileName,singlePdfFileUrl.fileName(),true); //writes the fisrt page locally
+        
+        if (pdfWriterSuccess) {
+            KMessageBox::information (0,i18n("1st page was successfully created. Each new scan will be appended to it.")); 
+            firstPageCreated=true;
+        }
+        return;
     } // fisrt page created
     
+    gsCheckForPasswd(singlePdfFileName,QString()); // check if selected file is protected
+    if (gsIsProtected) {
+        bool ok;
+        passwd = QInputDialog::getText(this, i18n("Enter password"),
+                                       singlePdfFileUrl.toString() + i18n(" seems to be password protected.\nEnter password to continue. The resulting file will be encrypted using the existing password.")
+                                       , QLineEdit::Password,
+                                       QString(), &ok);
+        if (!ok) return;
+        gsCheckForPasswd(singlePdfFileName,passwd); //check if passwd from user input is right
+        if (gsPasswdIsCorrect) {
+            pdfPasswd=passwd;
+            pdfPasswdIsSet=true;
+            if (!m_settingsUi.pdfEncrypt->isChecked()) {
+                m_settingsUi.pdfEncrypt->setChecked(true);
+                pdfEncryptChanged=true;
+            }
+        }
+        else {
+            KMessageBox::error(0,i18n("Wrong password!"));
+            //             QFile::remove (singlePdfFileName+QStringLiteral(".orig"));
+            return;
+        }
+    }
+    else {
+        passwd=QString();
+    }
     
-    if (SinglePdfFileUrl.isLocalFile()) {
-        pdfWriter(tmpDir+QStringLiteral(".kEasySkan.pdf"),false); //writes the next page into temp file
-        gsMerge(SinglePdfFileName,tmpDir+QStringLiteral(".kEasySkan.pdf")); // append next pdf page 
-    }
-    else { //remote file
-        SinglePdfFileName=SinglePdfFileUrl.fileName();
-        counter+=1;
-        pdfWriter(tmpDir+pdfNamePrefix+numberToString(counter,4),false);
-        gsMerge(tmpDir+SinglePdfFileUrl.fileName(),tmpDir+pdfNamePrefix+numberToString(counter,4));
-    }
+    pdfWriter(tmpDir+QStringLiteral(".kEasySkan.pdf"),singlePdfFileUrl.fileName(),false); //writes the next page into temp file
+    gsMerge(singlePdfFileName,tmpDir+QStringLiteral(".kEasySkan.pdf"),passwd); // append next pdf page 
+    
     
     if (gsMergeOk==false) {
-        KMessageBox::error (0,SinglePdfFileName+i18n(" was not upadated!"));
+        KMessageBox::error (0,singlePdfFileUrl.toString()+i18n(" was not upadated!"));
         return;
     }
     else {
         KMessageBox::createKMessageBox(dialogSingle,
-                                       buttonsSingle,QMessageBox::Information,SinglePdfFileName+i18n("  has been successfully updated." ),
+                                       buttonsSingle,QMessageBox::Information,singlePdfFileUrl.toString()+i18n("  has been successfully updated." ),
                                        QStringList(),
                                        i18n("This was the last page."),
                                        &lastPage,
                                        KMessageBox::Notify);
         if (lastPage==true) {
             if (m_settingsUi.pdfEncrypt->isChecked() && !pdfPasswdIsSet) {
-            pdfPasswd=getPasswd();
-            if (pdfPasswd.isEmpty()) {
-                KMessageBox::information (0,i18n("No password was given! PDF encryption will be disabled."));
-                m_settingsUi.pdfEncrypt->setChecked(false);
-            } 
-            pdfPasswdIsSet=true;
-        }
-        
-        if (m_settingsUi.pdfEncrypt->isChecked()) {
+                pdfPasswd=getPasswd();
+                if (pdfPasswd.isEmpty()) {
+                    KMessageBox::information (0,i18n("No password was given! PDF encryption will be disabled."));
+                    m_settingsUi.pdfEncrypt->setChecked(false);
+                } 
+                pdfPasswdIsSet=true;
+            }
             
-            if (SinglePdfFileUrl.isLocalFile()) {
-                gsPasswd(SinglePdfFileName);
-                if (!gsPasswdOk) return;    
+            if (m_settingsUi.pdfEncrypt->isChecked()) {
+                gsEncrypt(singlePdfFileName);
+                if (!gsEncryptOk) return;    
             }
-            else {
-                gsPasswd(tmpDir+SinglePdfFileUrl.fileName());
-                if (!gsPasswdOk) return;    
-            }
-        }
-
-            KMessageBox::information(0,SinglePdfFileName+i18n("  is now ready!"));
+            
+            KMessageBox::information(0,singlePdfFileUrl.fileName()+i18n("  is now ready!"));
             firstPage=true; // so we can create a new PDF file
             firstPageCreated=false; // so we can create a new PDF file
-            QFile::remove(SinglePdfFileName + QStringLiteral(".backup"));
+            pdfPasswdIsSet=false; // resets the password for new project file
+            QFile::remove(singlePdfFileName + QStringLiteral(".backup"));
         }
     }
     
-    if (!SinglePdfFileUrl.isLocalFile() && lastPage) {
+    if (pdfEncryptChanged) m_settingsUi.pdfEncrypt->setChecked(false);
+    
+    if (!singlePdfFileUrl.isLocalFile() && lastPage) {
         
-        docUploader(SinglePdfFileUrl);
+        docUploader(singlePdfFileName,singlePdfFileUrl);
+        if (uploadFileOk) QFile::remove(singlePdfFileName);
+        if (singlePdfFileExists) {
+            QUrl singlePdfFileUrlBu=QUrl(singlePdfFileUrl.toString()+QStringLiteral(".orig"));
+            docUploader(singlePdfFileName+QStringLiteral(".orig"),singlePdfFileUrlBu);
+            if (uploadFileOk) QFile::remove(singlePdfFileName+QStringLiteral(".orig"));
+        }
+        
     }
     QFile::remove(tmpDir+QStringLiteral(".kEasySkan.pdf"));
+    lbl2->setText(i18n("kEasySkan is ready."));
 }
 
 
-void kEasySkan::OpenWithGimp() // works only with local files
+
+void kEasySkan::openWithGimp() // works only with local files
 {
-    
+    lbl->setText(i18n("Preparing for Gimp..."));
     KMessageBox::information(0,i18n("kEasySkan needs to save the image locally before you can edit it with Gimp."));
     QString suggestedFileName ;
     QDateTime dateTime = dateTime.currentDateTime();
     
     suggestedFileName=imgDir+imageNamePrefix; 
-    if (!targetImgDirLocal) suggestedFileName=QDir::homePath()+QStringLiteral("/")+imageNamePrefix;
+    if (!imgUrl.isLocalFile()) suggestedFileName=QDir::homePath()+QStringLiteral("/")+imageNamePrefix;
+    
+    if (m_settingsUi.noneAppend->isChecked()) {
+        suggestedFileName.append(QStringLiteral(".")+imageFormatAsString);
+    }
     
     if (m_settingsUi.dateTimeAppend->isChecked()==true) {
         suggestedFileName.append(QStringLiteral("-")+dateTime.toString(QStringLiteral("yyyy.MM.dd-hh.mm.ss")));
@@ -1387,7 +1374,8 @@ void kEasySkan::OpenWithGimp() // works only with local files
     
     if (m_settingsUi.autoNumberAppend->isChecked()==true) {
         suggestedFileName.append(QStringLiteral("-"));
-        QString strNm=numberToString(autoNumber(suggestedFileName),4);
+        QString strNm=numberToString(autoNumber(QUrl::fromLocalFile(suggestedFileName)),4);
+        if (aNumber==-1) return;
         suggestedFileName.append(strNm);
         suggestedFileName.append(QStringLiteral(".")+imageFormatAsString);
     }
@@ -1402,7 +1390,7 @@ void kEasySkan::OpenWithGimp() // works only with local files
         return;
     }
     
-    ImageWriter(gimpFileName,imageFormat,imageQuality);
+    imageWriter(QUrl::fromLocalFile(gimpFileName),imageFormat,imageQuality);
     
     if (writeOk==false) {
         
@@ -1415,33 +1403,29 @@ void kEasySkan::OpenWithGimp() // works only with local files
         saveSettings();
     }
     
-    KMessageBox::information(0,(QString(gimpFileName)).append(i18n("  has been saved successfully. Gimp is now ready...") ));
-    
     gimpFileName.prepend(QStringLiteral("\"")); // this is a workaround in case filename contains spaces
     gimpFileName.append(QStringLiteral("\"")); // same here...
     
     QProcess *RunGimp = new QProcess(); // program will stay open even if user closes kEasySkan
     gimpFileName.prepend(QStringLiteral("gimp "));
     RunGimp->start(gimpFileName);
+    lbl->setText(i18n("kEasySkan is ready."));
     
 }
 
-void kEasySkan::OpenWithDefault()
+void kEasySkan::openWithDefault()
 {
-    ImageWriter(tmpDir+QStringLiteral(".kEasySkan.")+imageFormatAsString,imageFormat,imageQuality);
+    imageWriter(QUrl((tmpDir+QStringLiteral(".kEasySkan.")+imageFormatAsString)),imageFormat,imageQuality);
     if (writeOk==false) {return;} 
-    
     QDesktopServices::openUrl(QUrl::fromLocalFile(tmpDir+QStringLiteral(".kEasySkan.")+imageFormatAsString));
 }
 
 
 
-void kEasySkan::OpenWithOther()
+void kEasySkan::openWithOther()
 {
-    ImageWriter(tmpDir+QStringLiteral(".kEasySkan.")+imageFormatAsString,imageFormat,imageQuality);
-    
+    imageWriter(QUrl(tmpDir+QStringLiteral(".kEasySkan.")+imageFormatAsString),imageFormat,imageQuality);    
     if (writeOk==false) {return;} 
-    
     QList<QUrl> fileList;
     QUrl fileUrl;
     fileUrl.setPath(tmpDir+QStringLiteral(".kEasySkan.")+imageFormatAsString);
@@ -1461,9 +1445,10 @@ void kEasySkan::sendToClipboard()
 
 void kEasySkan::mailTo()
 {
+    lbl->setText(i18n("Composing e-mail..."));
     QUrl mailUrl;
     QString mmailFname;
-        
+    
     QDialog *mailDialog = new QDialog(m_showImgDialog);
     mailDialog->resize(400, 300);
     mailDialog->setWindowTitle(QStringLiteral("mail to ..."));
@@ -1492,7 +1477,7 @@ void kEasySkan::mailTo()
     mailLayout->addWidget(mailBody);
     
     QLabel *label_4 = new QLabel(mailDialog);
-    label_4->setText(i18n("File description:"));
+    label_4->setText(i18n("Filename:"));
     mailLayout->addWidget(label_4);
     QLineEdit *mailFname = new QLineEdit(mailDialog);
     mailLayout->addWidget(mailFname);
@@ -1528,6 +1513,7 @@ void kEasySkan::mailTo()
         mmailClient=mailClient->currentText();
     }
     else {
+        lbl->setText(i18n("kEasySkan is ready."));
         return;
     }
     
@@ -1546,12 +1532,12 @@ void kEasySkan::mailTo()
     
     if (mailPdf->isChecked()) {
         mmailFname.append(QStringLiteral("pdf"));
-        pdfWriter(mmailFname,true);
+        pdfWriter(mmailFname,mailFname->text(),false);
         if (pdfWriterSuccess==false) {return;}
     }
     else {
         mmailFname.append(imageFormatAsString);
-        ImageWriter(mmailFname,imageFormat,imageQuality);
+        imageWriter(QUrl::fromLocalFile(mmailFname),imageFormat,imageQuality);
         if (writeOk==false) {return;} 
     }
     
@@ -1560,50 +1546,45 @@ void kEasySkan::mailTo()
     QString mailClientOptions;
     
     if (mmailClient==QStringLiteral("kmail")) {
-        
-        mailClientOptions.append(QStringLiteral(" -s \""));
-        mailClientOptions.append(mmailSubject);
-        mailClientOptions.append(QStringLiteral("\" --body \""));
-        mailClientOptions.append(mmailBody);
-        mailClientOptions.append(QStringLiteral("\" --attach \""));
-        mailClientOptions.append(mmailFname);
-        mailClientOptions.append(QStringLiteral("\" "));
-        mailClientOptions.append(mmailAddress);
-        mailFinalCommand=mmailClient+mailClientOptions;
+        mailFinalCommand=QStringLiteral("kmail -s MAILSUBJECT --body MAILBODY --attach MAILATTACH MAILADDRESS");
     }
     
     if (mmailClient==QStringLiteral("evolution")) {
-        mailClientOptions.append(QStringLiteral(" mailto:"));
-        mailClientOptions.append(mmailAddress);
-        mailClientOptions.append(QStringLiteral("?subject=\""));
-        mailClientOptions.append(mmailSubject);
-        mailClientOptions.append(QStringLiteral("\"\&body=\""));
-        mailClientOptions.append(mmailBody);
-        mailClientOptions.append(QStringLiteral("\"\&attach=\""));
-        mailClientOptions.append(mmailFname);
-        mailClientOptions.append(QStringLiteral("\"\""));
-        mailFinalCommand=mmailClient+mailClientOptions;
+        
+        mailFinalCommand=QStringLiteral("evolution mailto:MAILADDRESS?subject=MAILSUBJECT&body=MAILBODY&attach=MAILATTACH");
     }
     
     if ( (mmailClient==QStringLiteral("thunderbird")) | (mmailClient==QStringLiteral("seamonkey")) ) {
-        mailClientOptions.append(QStringLiteral(" -compose \"to="));
-        mailClientOptions.append(mmailAddress);
-        mailClientOptions.append(QStringLiteral(",subject=\""));
-        mailClientOptions.append(mmailSubject);
-        mailClientOptions.append(QStringLiteral("\",body=\""));
-        mailClientOptions.append(mmailBody);
-        mailClientOptions.append(QStringLiteral("\",attachment=\""));
-        mailClientOptions.append(mmailFname);
-        mailClientOptions.append(QStringLiteral("\"\""));
+        mailClientOptions=QStringLiteral(" -compose \"to=MAILADDRESS ,subject=MAILSUBJECT,body=MAILBODY,attachment=MAILATTACH\"");
         mailFinalCommand=mmailClient+mailClientOptions;
     }
     
+    mailFinalCommand.replace(QStringLiteral("MAILADDRESS"),gsString(mmailAddress));
+    mailFinalCommand.replace(QStringLiteral("MAILSUBJECT"),gsString(mmailSubject));
+    mailFinalCommand.replace(QStringLiteral("MAILBODY"),gsString(mmailBody));
+    mailFinalCommand.replace(QStringLiteral("MAILATTACH"),gsString(mmailFname));
+    
     mailSend->start(mailFinalCommand);
+    lbl->setText(i18n("kEasySkan is ready."));
 }
 
 
-void kEasySkan::ImageWriter(const QString fName, const QByteArray fFormat, int fQuality)
+void kEasySkan::imageWriter(const QUrl fNameUrl, const QByteArray fFormat, int fQuality)
 {
+    writeOk=false;
+    QString fName;
+    
+    if (fNameUrl.isLocalFile()) {
+        fName=fNameUrl.toLocalFile();
+        int j;
+        if (QFile::exists(fName)==true) {
+            j = KMessageBox::warningContinueCancel(0,fName+i18n(" already exists.\nOverwrite ?")); 
+        }
+        if (j==2) {return;}
+    }
+    else {
+        fName=tmpDir+fNameUrl.fileName();
+    }
     
     QImageWriter *writer = new QImageWriter();
     writer -> setFormat(fFormat);
@@ -1619,41 +1600,53 @@ void kEasySkan::ImageWriter(const QString fName, const QByteArray fFormat, int f
         writeOk=false;
         return;
     }
-    writeOk=true;
     
+    if (fNameUrl.isLocalFile()) {
+        writeOk=true;
+    }
+    else {
+        docUploader(fName,fNameUrl);
+        // todo check if remote file exists
+        if (uploadFileOk) writeOk=true;
+    }
 }
 
 
 
-void kEasySkan::pdfWriter(const QString fName, bool writeDocName)
+void kEasySkan::pdfWriter(const QString fName, const QString docName, bool confirmOverwrite)
 {
+    
     lbl->setText(i18n("Creating PDF file..."));
+    lbl2->setText(i18n("Creating PDF file..."));
     
-    QObject::connect (this,SIGNAL(processStarted()),msgDlg,SLOT(show()));
-    QObject::connect (this,SIGNAL(processFinished()),msgDlg,SLOT(close()));
+    qApp->processEvents();    
     
-    Q_EMIT processStarted();
-    msgDlg->repaint();
-    QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents,1000); 
+    pdfWriterSuccess=false;
+    
+    int j;
+    if (QFile::exists(fName)==true && confirmOverwrite) {
+        j = KMessageBox::warningContinueCancel(0,fName+i18n(" already exists.\nOverwrite ?")); 
+    }
+    if (j==2) {return;}
     
     QFileInfo fInfo(fName);
     QString path=fInfo.absolutePath();
     QString bName=fInfo.completeBaseName();
     
-    pdfWriterSuccess=false;
     if (QFile::exists(fName)) {QFile::remove(fName);}
     
     QSize size = mImage.size();
     qreal x = qreal(1000) * qreal(size.width()) / qreal(mImage.dotsPerMeterX()) ;
     qreal y = qreal(1000) * qreal(size.height()) / qreal(mImage.dotsPerMeterY()) ;
     QPrinter *printToPdf = new QPrinter(QPrinter::HighResolution);
+    
     QPageSize pSize = QPageSize(QSizeF(x,y),QPageSize::Millimeter,QString(),QPageSize::FuzzyMatch);
     
     printToPdf->setOutputFormat(QPrinter::PdfFormat);
     printToPdf->setPageSize(pSize);
     printToPdf->setOutputFileName(fName); 
     
-    if (writeDocName==true) { printToPdf->setDocName(bName+QLatin1String(" created by kEasySkan!")); }
+    if (!docName.isEmpty()) { printToPdf->setDocName(docName+QLatin1String(" created by kEasySkan!")); }
     QPainter painter(printToPdf);
     QRect rect = painter.viewport();
     
@@ -1662,116 +1655,163 @@ void kEasySkan::pdfWriter(const QString fName, bool writeDocName)
     painter.setWindow(mImage.rect());
     painter.drawImage(0, 0, mImage);
     
-    Q_EMIT processFinished();
+    lbl->clear();
+    lbl2->clear();
+    qApp->processEvents();
     
-    if (QFile::exists(fName)) {
-        
-        pdfWriterSuccess=true ;
-    }
-    else {
-        
+    if (!QFile::exists(fName)) {
         QString strError;
         if (QFile::exists(path)==false) {strError=QString(path+i18n(" : Directory not found or invalid file name"));}
         if (fInfo.isWritable()==false && QFile::exists(path)==true) {strError=QString(path+i18n(" : Directory not writable"));}
         if (fInfo.isWritable()==true && QFile::exists(path)==true) {strError=QString(i18n(" Scanner didn't produce a valid output."));}
         KMessageBox::error(0,i18n("PDF operation failed.\nPlease check your settings and try again.\nIf the proplem persists, restart kEasySkan.\nError : ")+strError);
-        
+        pdfWriterSuccess=false;
         return;
-    }    
+    }
+    else pdfWriterSuccess=true;
 }
 
 
 
-bool   kEasySkan::gsMerge(const QString fName1, const QString fName2)
+bool   kEasySkan::gsMerge(const QString fName1, const QString fName2, const QString pwd)
 { 
     lbl->setText(i18n("Merging PDF files..."));
-
+    lbl2->setText(i18n("Merging PDF files..."));
+    qApp->processEvents();
+    
     gsMergeOk=false;
     QString Command;
-    QString CommandOptions;
     QString fNameBackup = fName1 + (QStringLiteral(".backup"))  ;
     
     if (QFile::exists(fNameBackup)) {QFile::remove(fNameBackup);}
     
     QFile::copy (fName1,fNameBackup);
     
-    Command=QStringLiteral("gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress -sOutputFile=");
-    CommandOptions.append(QStringLiteral("\""));
-    CommandOptions.append(fName1);
-    CommandOptions.append(QStringLiteral("\""));
-    CommandOptions.append(QStringLiteral(" "));
-    CommandOptions.append(QStringLiteral("\""));
-    CommandOptions.append(fNameBackup);
-    CommandOptions.append(QStringLiteral("\" \""));
-    CommandOptions.append(fName2);
-    CommandOptions.append(QStringLiteral("\""));
-
-//     KMessageBox::information(0,Command+CommandOptions);
-    
-    QProcess *gs = new QProcess();
-    connect(gs,SIGNAL(started()),msgDlg,SLOT(exec()));
-    connect(gs,SIGNAL(finished(int,QProcess::ExitStatus)),msgDlg,SLOT(close()));
-    
-    gs->start(Command + CommandOptions);
-    gs->waitForFinished(500);
-    int j = gs->exitCode();
-    
-    QString err = QString::fromStdString( ((gs->readAllStandardError())).toStdString() );
-    QString out = QString::fromStdString( ((gs->readAllStandardOutput())).toStdString() );
-    
-    if (j==0) {
-        QFile::remove(fName2);
-        return gsMergeOk=true;
+    if (m_settingsUi.pdfQuality->currentIndex()==2) {
+        Command=QStringLiteral("gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sPDFPassword=PPPP -sOutputFile=OOOO FIRSTFILE LASTFILE");
     }
+    
     else {
-        KMessageBox::error (0,i18n("PDF operation failed.\nGhostscript output:\n") +out+err);
-        QFile::remove (fName1);
-        QFile::rename (fNameBackup,fName1);
-        return gsMergeOk=false;
+        Command=QStringLiteral("gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dPDFSETTINGS=QQQQ -sPDFPassword=PPPP -sOutputFile=OOOO FIRSTFILE LASTFILE");
+        
     }
-    
+        
+        Command.replace(QStringLiteral("QQQQ"),pdfQuality);
+        Command.replace(QStringLiteral("PPPP"),gsString(pwd));
+        Command.replace(QStringLiteral("OOOO"),gsString(fName1));
+        Command.replace(QStringLiteral("FIRSTFILE"),gsString(fNameBackup));
+        Command.replace(QStringLiteral("LASTFILE"),gsString(fName2));
+        
+        QProcess *gs = new QProcess();
+        
+        gs->start(Command);
+        gs->waitForFinished();
+        int j = gs->exitCode();
+        
+        QString err = QString::fromStdString( ((gs->readAllStandardError())).toStdString() );
+        QString out = QString::fromStdString( ((gs->readAllStandardOutput())).toStdString() );
+        
+        lbl->clear();
+        lbl2->clear();
+        qApp->processEvents();
+        
+        if (j==0) {
+            QFile::remove(fName2);
+            QFile::remove(fNameBackup);
+            return gsMergeOk=true;
+        }
+        else {
+            KMessageBox::error (0,i18n("PDF operation failed.\nGhostscript output:\n") +out+err);
+            QFile::remove (fName1);
+            QFile::rename (fNameBackup,fName1);
+            return gsMergeOk=false;
+        }
 }
 
 
-void kEasySkan::gsPasswd(const QString fName1)
+void kEasySkan::gsEncrypt(const QString fName)
 
 { 
-    gsPasswdOk=false;
+    gsEncryptOk=false;
     lbl->setText(i18n("Encrypting PDF file..."));
-
+    lbl2->setText(i18n("Encrypting PDF file..."));
+    qApp->processEvents();
     QString Command;
-    QString CommandOptions;
-    QString fNameBackup = fName1 + (QStringLiteral(".backup"))  ;
+    QString fNameBackup = fName + (QStringLiteral(".backup"))  ;
     
     if (QFile::exists(fNameBackup)) {QFile::remove(fNameBackup);}
     
-    QFile::copy (fName1,fNameBackup);
- 
-    Command=QStringLiteral("gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress -sOwnerPassword=");
+    QFile::copy (fName,fNameBackup);
     
-    CommandOptions.append(QStringLiteral("\""));
-    CommandOptions.append(pdfPasswd);
-    CommandOptions.append(QStringLiteral("\" "));
-    
-    CommandOptions.append(QStringLiteral("-sUserPassword="));
-    CommandOptions.append(QStringLiteral("\""));
-    CommandOptions.append(pdfPasswd);
-    CommandOptions.append(QStringLiteral("\" "));
-    
-    CommandOptions.append(QStringLiteral("-sOutputFile="));
-    CommandOptions.append(QStringLiteral("\""));
-    CommandOptions.append(fName1);
-    CommandOptions.append(QStringLiteral("\" \""));
-    CommandOptions.append(fNameBackup);
-    CommandOptions.append(QStringLiteral("\""));
+    if (m_settingsUi.pdfQuality->currentIndex()==2) {
+        Command=QStringLiteral("gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOwnerPassword=PPPP -sUserPassword=PPPP -sOutputFile=OOOO INPUTFILE");}
+        else {
+            Command=QStringLiteral("gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dPDFSETTINGS=QQQQ -sOwnerPassword=PPPP -sUserPassword=PPPP -sOutputFile=OOOO INPUTFILE");}
+            
+            Command.replace(QStringLiteral("QQQQ"),pdfQuality);
+            Command.replace(QStringLiteral("PPPP"),gsString(pdfPasswd));
+            Command.replace(QStringLiteral("OOOO"),gsString(fName));
+            Command.replace(QStringLiteral("INPUTFILE"),gsString(fNameBackup));
+            
+            QProcess *gs = new QProcess();
+            
+            gs->start(Command);
+            
+            gs->waitForFinished();
+            lbl->clear();
+            lbl2->clear();
+            qApp->processEvents();
+            int j = gs->exitCode();
+            
+            QString err = QString::fromStdString( ((gs->readAllStandardError())).toStdString() );
+            QString out = QString::fromStdString( ((gs->readAllStandardOutput())).toStdString() );
+            
+            if (j==0) {
+                QFile::remove(fNameBackup);
+                gsEncryptOk=true;
+            }
+            else {
+                KMessageBox::error (0,i18n("PDF operation failed.\nGhostscript output:\n") +out+err);
+                QFile::remove (fName);
+                QFile::rename (fNameBackup,fName);
+                gsEncryptOk=false;
+            }
+}
 
+void kEasySkan::gsQuality(const QString fName)
+
+{ 
+    gsQualityOk=false;
+    lbl->setText(i18n("Adjusting quality..."));
+    lbl2->setText(i18n("Adjusting quality..."));
+    qApp->processEvents();
+    
+    QString Command;
+    QString fNameBackup = fName + (QStringLiteral(".backup"))  ;
+    
+    if (QFile::exists(fNameBackup)) {QFile::remove(fNameBackup);}
+    
+    QFile::copy (fName,fNameBackup);
+    
+    if (m_settingsUi.pdfQuality->currentIndex()==2) {
+        Command=QStringLiteral("gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=OOOO INPUTFILE");
+    }
+    else {
+        Command=QStringLiteral("gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dPDFSETTINGS=QQQQ -sOutputFile=OOOO INPUTFILE");
+    }
+    
+    Command.replace(QStringLiteral("QQQQ"),pdfQuality);
+    Command.replace(QStringLiteral("OOOO"),gsString(fName));
+    Command.replace(QStringLiteral("INPUTFILE"),gsString(fNameBackup));
+    
     QProcess *gs = new QProcess();
-   
-    connect(gs,SIGNAL(started()),msgDlg,SLOT(exec()));
-    connect(gs,SIGNAL(finished(int,QProcess::ExitStatus)),msgDlg,SLOT(close()));
-   
-    gs->start(Command+CommandOptions);
-    gs->waitForFinished(500);
+    
+    gs->start(Command);
+    
+    gs->waitForFinished();
+    lbl->clear();
+    lbl2->clear();
+    qApp->processEvents();
     int j = gs->exitCode();
     
     QString err = QString::fromStdString( ((gs->readAllStandardError())).toStdString() );
@@ -1779,35 +1819,87 @@ void kEasySkan::gsPasswd(const QString fName1)
     
     if (j==0) {
         QFile::remove(fNameBackup);
-        gsPasswdOk=true;
+        gsQualityOk=true;
     }
     else {
         KMessageBox::error (0,i18n("PDF operation failed.\nGhostscript output:\n") +out+err);
-        QFile::remove (fName1);
-        QFile::rename (fNameBackup,fName1);
-        gsPasswdOk=false;
+        QFile::remove (fName);
+        QFile::rename (fNameBackup,fName);
+        gsQualityOk=false;
     }
     
 }
 
 
-    
-
-
-int kEasySkan::autoNumber (const QString fNamePrefix)
+void kEasySkan::gsCheckForPasswd (const QString fName, const QString pwd)
 {
-    int aNumber;
+    gsIsProtected=false;
+    gsPasswdIsCorrect=false;
     
-    QFileInfo fInfo (fNamePrefix);
-    bool ok;
-    QString  bName = fInfo.completeBaseName();
+    QString Command=QStringLiteral("gs -dBATCH -dNOPAUSE -sNODISPLAY -sPDFPassword=PPPP INPUTFILE");
+    
+    Command.replace(QStringLiteral("PPPP"),gsString(pwd));
+    Command.replace(QStringLiteral("INPUTFILE"),gsString(fName));
+    
+    QProcess *gs = new QProcess();
+    
+    gs->start(Command);
+    gs->waitForFinished();
+    int j = gs->exitCode();
+    
+    QString err = QString::fromStdString( ((gs->readAllStandardError())).toStdString() );
+    QString out = QString::fromStdString( ((gs->readAllStandardOutput())).toStdString() );
+    
+    if (j==0 && pwd.isEmpty()) gsIsProtected=false;
+    if (j!=0 && pwd.isEmpty()) gsIsProtected=true;
+    if (j==0 && !pwd.isEmpty()) gsPasswdIsCorrect=true;
+    if (j!=0 && !pwd.isEmpty()) gsPasswdIsCorrect=false;
+}
+
+
+int kEasySkan::autoNumber (const QUrl fNamePrefix)
+{
+    QString bName;
+    bool ok,local=false;
+    
     QDir *mdir = new QDir();
-    QStringList fFilters;
     QStringList matchingFiles;
     
-    mdir->setPath(fInfo.absolutePath());
-    mdir->setNameFilters(fFilters); // use empty filter
-    matchingFiles=mdir->QDir::entryList(); // to list all files
+    if (fNamePrefix.isLocalFile()) local=true;
+    
+    if (local) {
+        QFileInfo fInfo (fNamePrefix.toLocalFile());
+        bName=fInfo.completeBaseName();
+        mdir->setPath(fInfo.absolutePath());
+        QStringList fFilters;
+        mdir->setNameFilters(fFilters); // use empty filter
+        matchingFiles=mdir->QDir::entryList(); // to list all files
+    }
+    else //remote
+    {
+        lbl->setText(i18n("Getting information from remote host..."));
+        lbl2->setText(i18n("Getting information from remote host..."));
+        qApp->processEvents();
+        bName=fNamePrefix.fileName();
+        QUrl urlSlash=QUrl(fNamePrefix).resolved(QUrl(QStringLiteral("./")));
+        listjob = KIO::listDir(urlSlash,KIO::JobFlag::DefaultFlags,true);
+        connect( listjob, &KIO::ListJob::entries, this, &kEasySkan::remoteEntries);
+        QTimer *tmr = new QTimer(this);
+        tmr->setSingleShot(true);
+        QObject::connect(tmr,SIGNAL(timeout()),this,SLOT(killListJob()));
+        tmr->start(60000);
+        listjob->exec();
+        if (tmr->isActive()) {
+            tmr->stop(); 
+        }
+        else {
+            return aNumber=-1;
+        }
+        lbl->clear();
+        lbl2->clear();
+        qApp->processEvents();
+        matchingFiles=remoteFileList;
+    }
     
     matchingFiles=matchingFiles.filter(bName); // selects only the filenames witch contain the same flnm prefix
     
@@ -1832,7 +1924,7 @@ int kEasySkan::autoNumber (const QString fNamePrefix)
     }
     qSort(list.begin(),list.end(),qGreater<int>()); 
     
-    aNumber=list[0]+1  ; //fist entry -> integer +1 is what we were looking for
+    aNumber=list[0]+1  ; //fist entry +1 is what we were looking for
     return aNumber;
 }  
 
@@ -1842,52 +1934,71 @@ QString kEasySkan::numberToString (int i, int length)
     std::stringstream stdStream;
     stdStream << std::setw(length) << std::setfill('0') << i;
     return QString::fromStdString(stdStream.str());
-    
 }
 
-void kEasySkan::docUploader (const QUrl fName)
+void kEasySkan::docUploader (const QString localName, const QUrl remoteName)
 {
-    QObject::connect (this,SIGNAL(processStarted()),msgDlg,SLOT(show()));
-    QObject::connect (this,SIGNAL(processFinished()),msgDlg,SLOT(close()));
-    
     lbl->setText(i18n("Uploading file to remote host..."));
-    
-    Q_EMIT processStarted();
-    
-    msgDlg->repaint();
-    QCoreApplication::processEvents(QEventLoop::WaitForMoreEvents,1000); 
-    
+    lbl2->setText(i18n("Uploading file to remote host..."));
+    qApp->processEvents();
     uploadFileOk=false;
-    QString localName = fName.fileName();
-    QFile tmpFile(tmpDir+localName);
-    tmpFile.open(QIODevice::ReadOnly);
-    auto uploadJob = KIO::storedPut(&tmpFile, fName, -1);
-    KJobWidgets::setWindow(uploadJob, QApplication::activeWindow());
-    uploadFileOk = uploadJob->exec();
-    int j = uploadJob->error();
-    tmpFile.close();
+    QFileInfo fInfo(localName);
+    QString bName=fInfo.fileName();
     
-    if (uploadFileOk==false) {
-        KMessageBox::sorry(0, i18n("Failed to upload image. Error code: ")+QString::number(j));
+    if( KIO::NetAccess::upload( localName, remoteName, nullptr ) ) {
+        lbl->clear();
+        lbl2->clear();
+        qApp->processEvents();
+        uploadFileOk=true;
+        if (!(localName.right(5)).contains(QStringLiteral(".orig")))  {
+            KMessageBox::information(this,bName+i18n("  successfully uploaded to remote host."));\
+        }
+    } 
+    else {
+        lbl->clear();
+        lbl2->clear();
+        qApp->processEvents();
+        KMessageBox::error(this, KIO::NetAccess::lastErrorString() );
     }
-    else
-    {
-        KMessageBox::information(0,localName+i18n("  successfully uploaded to remote host."));
-        tmpFile.remove();
-    }
-    Q_EMIT processFinished ();
 }
 
 QString kEasySkan::getPasswd()
 {
     QString result;
-    KNewPasswordDialog *dlg = new KNewPasswordDialog();
-    dlg->setPrompt( i18n( "Enter password for PDF encryption" ) );
-    if (dlg->exec()) {
-        result=dlg->password();
+    KNewPasswordDialog dlg;
+    dlg.setPrompt( i18n( "Enter password for PDF encryption" ) );
+    dlg.setMinimumPasswordLength(1);
+    if (dlg.exec()) {
+        result=dlg.password();
     }
     else {
-        result=QString();
+        result.clear();
     }
     return result;
+}
+
+QString kEasySkan::gsString (QString str0)
+{
+    str0.prepend(QStringLiteral("\""));
+    str0.append(QStringLiteral("\""));
+    return str0;
+}
+
+void kEasySkan::remoteEntries( KIO::Job *job, const KIO::UDSEntryList &list )
+{
+    for( KIO::UDSEntryList::ConstIterator it = list.begin(); it != list.end(); ++it )
+    {
+        const KIO::UDSEntry &entry = *it;
+        remoteFileList << entry.stringValue( KIO::UDSEntry::UDS_NAME );
+    }
+}
+
+void kEasySkan::killListJob()
+{
+    lbl->setText(i18n("Stopping remote service..."));
+    lbl2->setText(i18n("Stopping remote service..."));
+    qApp->processEvents();
+    if (listjob->kill()) {
+        KMessageBox::sorry(0,i18n("Couldn't get information from remote host within 1 min.\nAborting..."));
+    }
 }

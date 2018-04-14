@@ -13,7 +13,7 @@ with cmake extra modules
 KDE-FRAMEWORK KF5 >= 5.1.0
 QT5 >= 5.3.0
 QT5 support for: (Core, Widgets, PrintSupport)
-KF5 support for: (CoreAddons, I18n, XmlGui, KIO, Sane)
+KF5 support for: (CoreAddons, I18n, XmlGui, KIO, Sane, KDELibs4Support)
 libpng
 
 You'll need both run-time and devel packages of the above in order to compile and run kEasySkan
