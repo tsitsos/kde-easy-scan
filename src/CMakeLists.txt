@@ -13,11 +13,11 @@ target_link_libraries(kEasySkan
     KF5::Sane
     KF5::I18n
     KF5::XmlGui
-    KF5::KIOWidgets
     KF5::ConfigCore
     KF5::I18n
     KF5::KIOWidgets
     KF5::XmlGui
+    KF5::KDELibs4Support
     ${PNG_LIBRARY}
 )
 
